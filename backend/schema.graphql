@@ -1,0 +1,77 @@
+# ---------------------------
+# Common Types
+# ---------------------------
+type User {
+  id: ID!
+  name: String
+}
+
+type KnowledgeNode {
+  id: ID!
+  label: String          # e.g. "Rammed Earth Technology"
+  category: String       # e.g. "History", "Engineering"
+  description: String
+}
+
+type Relationship {
+  sourceId: ID!
+  targetId: ID!
+  relationType: String   # e.g. "-USES->", "-DESCRIBES->"
+}
+
+# ---------------------------
+# Kanban Types
+# ---------------------------
+type KanbanCard {
+  id: ID!
+  title: String
+  content: String
+  columnId: String       1. Ideation, 2. Research 3. Synthesis 4. Logistics
+  tags: [String]
+  knowledgePoints: [KnowledgeNode]  # Related knowledge point
+}
+
+# ---------------------------
+# Queries
+# ---------------------------
+type Query {
+  # Get the board data
+  getBoard(userId: ID!): [KanbanCard]
+  
+  # Get the single card data
+  getCard(cardId: ID!): KanbanCard
+  
+  # Get knowledge graph
+  getKnowledgeGraph(userId: ID!): GraphData
+}
+
+type GraphData {
+  nodes: [KnowledgeNode]
+  edges: [Relationship]
+}
+
+# ---------------------------
+# Mutations
+# ---------------------------
+type Mutation {
+  # Kanban Operations
+  createCard(input: CreateCardInput!): KanbanCard
+  moveCard(cardId: ID!, newColumnId: String!): KanbanCard
+  
+  # AI Interactions
+  # AI Assist or Deepen Inquiry on each Kanban card
+  startAIInquiry(cardId: ID!, userQuestion: String): AIInquiryResponse
+}
+
+input CreateCardInput {
+  title: String!
+  content: String
+  columnId: String
+}
+
+type AIInquiryResponse {
+  inquiryId: ID!
+  answer: String!          # AI Q&A Answer
+  extractedNodes: [KnowledgeNode]   # AI knowledge node extracted
+  extractedEdges: [Relationship]    # AI relationship extracted
+}
