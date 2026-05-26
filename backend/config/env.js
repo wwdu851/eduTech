@@ -15,6 +15,14 @@ const envSchema = z.object({
   }),
   GEMINI_API_KEY: z.string(),
   FRONTEND_URL: z.string().url().optional(),
+}).superRefine((data, ctx) => {
+  if (data.NODE_ENV === 'production' && !data.FRONTEND_URL) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'FRONTEND_URL is required when NODE_ENV=production',
+      path: ['FRONTEND_URL'],
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

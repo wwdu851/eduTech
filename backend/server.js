@@ -3,6 +3,7 @@ const path = require('path');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express5');
 const { ApolloServerPluginLandingPageLocalDefault } = require('@apollo/server/plugin/landingPage/default');
+const { ApolloServerPluginLandingPageDisabled } = require('@apollo/server/plugin/disabled');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -32,17 +33,38 @@ const aiLimiter = rateLimit({
 const typeDefs = fs.readFileSync(path.join(__dirname, 'models', 'schema.graphql'), 'utf8');
 const resolvers = require('./resolvers');
 const authService = require('./services/auth.service');
+const driver = require('./config/neo4j');
 
 async function startServer() {
   const app = express();
-  
-  // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
+
+  if (env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
+  // Health check — includes Neo4j connectivity for Render readiness probes
+  app.get('/health', async (req, res) => {
+    const payload = {
       timestamp: new Date().toISOString(),
-      env: env.NODE_ENV
-    });
+      env: env.NODE_ENV,
+    };
+
+    try {
+      const session = driver.session();
+      try {
+        await session.run('RETURN 1');
+      } finally {
+        await session.close();
+      }
+      res.json({ status: 'ok', database: 'connected', ...payload });
+    } catch (err) {
+      console.error('Health check failed:', err.message);
+      res.status(503).json({
+        status: 'error',
+        database: 'unavailable',
+        ...payload,
+      });
+    }
   });
 
   // Middleware
@@ -141,9 +163,9 @@ async function startServer() {
       }
       return formattedError;
     },
-    plugins: [
-      ApolloServerPluginLandingPageLocalDefault({ embed: true }),
-    ],
+    plugins: env.NODE_ENV === 'production'
+      ? [ApolloServerPluginLandingPageDisabled()]
+      : [ApolloServerPluginLandingPageLocalDefault({ embed: true })],
   });
   await server.start();
 
