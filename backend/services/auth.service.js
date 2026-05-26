@@ -1,11 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
+const env = require('../config/env');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET must be defined in environment variables');
-}
+const JWT_SECRET = env.JWT_SECRET;
 
 class AuthService {
   async register(email, password) {

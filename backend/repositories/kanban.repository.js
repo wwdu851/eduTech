@@ -1,4 +1,4 @@
-// Kanban CRUD Operations
+const neo4j = require('neo4j-driver');
 const driver = require('../config/neo4j');
 const { v4: uuidv4 } = require('uuid');
 const safetyService = require('../services/safety.service');
@@ -15,6 +15,7 @@ class KanbanRepository {
           title: $title,
           content: $content,
           columnId: $columnId,
+          tags: $tags,
           createdAt: datetime()
         })
         RETURN c
@@ -23,17 +24,18 @@ class KanbanRepository {
         cardId,
         title: safetyService.sanitizeInput(input.title),
         content: safetyService.sanitizeInput(input.content || ''),
-        columnId: input.columnId || 'IDEATION_DISCOVERY'
+        columnId: input.columnId || 'IDEATION_DISCOVERY',
+        tags: []
       });
 
       const card = result.records[0].get('c').properties;
-      return { ...card, id: card.id };
+      return { ...card, id: card.id, tags: card.tags || [] };
     } finally {
       await session.close();
     }
   }
 
-  async getUserBoard(userId) {
+  async getUserBoard(userId, limit = 50, offset = 0) {
     const session = driver.session();
     try {
       const result = await session.run(`
@@ -41,12 +43,22 @@ class KanbanRepository {
         OPTIONAL MATCH (c)-[:CONTAINS]->(k:KnowledgeNode)
         RETURN c, collect(k) as knowledgePoints
         ORDER BY c.createdAt DESC
-      `, { userId });
+        SKIP $offset
+        LIMIT $limit
+      `, { 
+        userId, 
+        offset: neo4j.int(offset), 
+        limit: neo4j.int(limit) 
+      });
 
-      return result.records.map(record => ({
-        ...record.get('c').properties,
-        knowledgePoints: record.get('knowledgePoints').map(k => k?.properties || null).filter(Boolean)
-      }));
+      return result.records.map(record => {
+        const card = record.get('c').properties;
+        return {
+          ...card,
+          tags: card.tags || [],
+          knowledgePoints: record.get('knowledgePoints').map(k => k?.properties || null).filter(Boolean)
+        };
+      });
     } finally {
       await session.close();
     }
@@ -64,8 +76,10 @@ class KanbanRepository {
       if (result.records.length === 0) return null;
 
       const record = result.records[0];
+      const card = record.get('c').properties;
       return {
-        ...record.get('c').properties,
+        ...card,
+        tags: card.tags || [],
         knowledgePoints: record.get('knowledgePoints').map(k => k?.properties || null).filter(Boolean)
       };
     } finally {

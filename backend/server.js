@@ -8,11 +8,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
-require('dotenv').config();
+const env = require('./config/env');
 
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
-	limit: 100, // Limit each IP to 100 requests per `window`
+	limit: 50, // Reduced from 100 to be tighter
 	standardHeaders: 'draft-7',
 	legacyHeaders: false,
 });
@@ -20,13 +20,11 @@ const limiter = rateLimit({
 // Specific limiter for AI inquiries to prevent "Wallet Stress"
 const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 10, // Limit each IP to 10 AI inquiries per hour
+  limit: 5, // Reduced from 10 to be tighter
   message: 'Too many AI inquiries from this IP, please try again after an hour',
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skip: (req) => {
-    // Skip if it's not a startAIInquiry mutation
-    // This is a bit hacky for express middleware, but works if we can see the body
     return !req.body?.query?.includes('startAIInquiry');
   }
 });
@@ -38,6 +36,15 @@ const authService = require('./services/auth.service');
 async function startServer() {
   const app = express();
   
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      env: env.NODE_ENV
+    });
+  });
+
   // Middleware
   app.use(cookieParser());
   app.use(
@@ -73,23 +80,67 @@ async function startServer() {
             "https://sandbox.embed.apollographql.com",
             "https://apollo-server-landing-page.cdn.apollographql.com",
           ],
+          manifestSrc: [
+            "'self'",
+            "https://apollo-server-landing-page.cdn.apollographql.com"
+          ],
+          frameAncestors: [
+            "'self'",
+            "https://studio.apollographql.com",
+            "https://sandbox.embed.apollographql.com",
+            "https://embeddable-sandbox.netlify.app"
+          ]
         },
       },
     })
   );
+  
+  // Tighten CORS
+  const allowedOrigins = env.NODE_ENV === 'production'
+    ? [env.FRONTEND_URL]
+    : [
+        env.FRONTEND_URL || 'http://localhost:3000',
+        'https://studio.apollographql.com',
+        'https://sandbox.embed.apollographql.com'
+      ];
+
   app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true
   }));
+
   app.use(express.json());
-  app.use(limiter);
-  app.use('/graphql', aiLimiter);
+  if (env.NODE_ENV === 'production') {
+    app.use(limiter);
+    app.use('/graphql', aiLimiter);
+  }
 
   // Apollo Server
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    introspection: true,
+    introspection: env.NODE_ENV !== 'production', // Disable in production
+    formatError: (formattedError, error) => {
+      // Don't leak internal error details in production
+      if (env.NODE_ENV === 'production') {
+        return {
+          message: formattedError.message,
+          path: formattedError.path,
+          extensions: {
+            code: formattedError.extensions?.code
+          }
+        };
+      }
+      return formattedError;
+    },
     plugins: [
       ApolloServerPluginLandingPageLocalDefault({ embed: true }),
     ],
@@ -106,9 +157,10 @@ async function startServer() {
   }));
 
   // Start the server
-  const PORT = process.env.PORT || 4000;
+  const PORT = env.PORT;
   app.listen(PORT, () => {
-    console.log(`Server ready at http://localhost:${PORT}/graphql`);
+    console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+    console.log(`🏥 Health check at http://localhost:${PORT}/health`);
   });
 }
 

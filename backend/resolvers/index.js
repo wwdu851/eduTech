@@ -4,11 +4,13 @@ const aiService = require('../services/ai.service');
 const safetyService = require('../services/safety.service');
 const authService = require('../services/auth.service');
 
+const env = require('../config/env');
+
 module.exports = {
   Query: {
-    getBoard: async (_, __, { userId }) => {
+    getBoard: async (_, { limit, offset }, { userId }) => {
       if (!userId) throw new Error('Unauthorized');
-      return await kanbanService.getUserBoard(userId);
+      return await kanbanService.getUserBoard(userId, limit, offset);
     },
 
     getCard: async (_, { cardId }, { userId }) => {
@@ -30,7 +32,7 @@ module.exports = {
       if (res) {
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
           maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
@@ -46,7 +48,7 @@ module.exports = {
       if (res) {
         res.cookie('token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: env.NODE_ENV === 'production',
           sameSite: 'strict',
           maxAge: 24 * 60 * 60 * 1000 // 1 day
         });

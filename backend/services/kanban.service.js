@@ -5,8 +5,8 @@ class KanbanService {
     return await kanbanRepo.createCard(userId, input);
   }
 
-  async getUserBoard(userId) {
-    return await kanbanRepo.getUserBoard(userId);
+  async getUserBoard(userId, limit, offset) {
+    return await kanbanRepo.getUserBoard(userId, limit, offset);
   }
 
   async getCard(userId, cardId) {

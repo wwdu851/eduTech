@@ -1,11 +1,11 @@
 const neo4j = require('neo4j-driver');
-require('dotenv').config();
+const env = require('./env');
 
 const driver = neo4j.driver(
-  process.env.NEO4J_URI || 'bolt://localhost:7687',
+  env.NEO4J_URI,
   neo4j.auth.basic(
-    process.env.NEO4J_USER || 'neo4j',
-    process.env.NEO4J_PASSWORD || 'neo4jneo4j'
+    env.NEO4J_USER,
+    env.NEO4J_PASSWORD
   )
 );
 

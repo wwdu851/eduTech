@@ -27,9 +27,13 @@ class SafetyService {
 
   moderateContent(text) {
     if (!text) return true;
-    const lower = text.toLowerCase();
+    
+    // Normalize text: remove common bypass characters and multiple spaces
+    const normalizedText = text.toLowerCase()
+      .replace(/[\s_\-\.\*\+\=\|]/g, ''); // Remove spaces and common separator chars
+    
     for (const keyword of this.bannedKeywords) {
-      if (lower.includes(keyword)) {
+      if (normalizedText.includes(keyword.toLowerCase())) {
         throw new Error(`Content contains inappropriate material`);
       }
     }
@@ -55,8 +59,10 @@ class SafetyService {
 
   sanitizeInput(input) {
     if (typeof input !== 'string') return input;
+    
+    // Allow line breaks and basic formatting for better UX
     return sanitizeHtml(input, {
-      allowedTags: [], // Strip all tags for now, as we don't support Rich Text yet
+      allowedTags: ['br', 'p', 'b', 'i', 'strong', 'em'], 
       allowedAttributes: {}
     }).trim();
   }

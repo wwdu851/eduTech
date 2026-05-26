@@ -1,11 +1,14 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const pRetry = require('p-retry');
+const pRetryModule = require('p-retry');
+const pRetry = pRetryModule.default || pRetryModule;
+const { AbortError } = pRetryModule;
+const env = require('../config/env');
 
 class AIService {
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    this.genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
     this.model = this.genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-flash-latest',
       safetySettings: [
         {
           category: 'HARM_CATEGORY_HARASSMENT',
@@ -61,17 +64,32 @@ Return ONLY valid JSON with this structure:
     const runAIGeneration = async () => {
       try {
         const result = await this.model.generateContent(prompt);
-        const response = result.response.text();
+        const responseText = result.response.text().trim();
         
-        // Parse JSON from response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('Invalid AI response format');
+        // More robust JSON extraction
+        let jsonStr = responseText;
+        if (responseText.includes('```json')) {
+          jsonStr = responseText.split('```json')[1].split('```')[0].trim();
+        } else if (responseText.includes('```')) {
+          jsonStr = responseText.split('```')[1].split('```')[0].trim();
+        } else {
+          const firstBrace = responseText.indexOf('{');
+          const lastBrace = responseText.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonStr = responseText.substring(firstBrace, lastBrace + 1);
+          }
+        }
         
-        return JSON.parse(jsonMatch[0]);
+        try {
+          return JSON.parse(jsonStr);
+        } catch (parseError) {
+          console.error('Failed to parse AI response:', responseText);
+          throw new Error('Invalid AI response format');
+        }
       } catch (error) {
         // If it's a transient error, retry. If it's a safety block, don't retry.
         if (error.message.includes('SAFETY')) {
-          throw new pRetry.AbortError(error);
+          throw new AbortError(error);
         }
         throw error;
       }
@@ -83,7 +101,7 @@ Return ONLY valid JSON with this structure:
         console.log(`AI Inquiry attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`);
       }
     }).catch(error => {
-      if (error instanceof pRetry.AbortError) {
+      if (error instanceof AbortError) {
         throw new Error(`AI Safety Block: ${error.message}`);
       }
       throw new Error('AI Service Temporarily Unavailable. Please try again later.');

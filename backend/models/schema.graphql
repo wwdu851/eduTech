@@ -75,7 +75,7 @@ type KanbanCard {
 # Queries
 # ---------------------------
 type Query {
-  getBoard: [KanbanCard]
+  getBoard(limit: Int, offset: Int): [KanbanCard]
   getCard(cardId: ID!): KanbanCard
   getKnowledgeGraph: GraphData
 }

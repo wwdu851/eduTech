@@ -1,12 +1,11 @@
 const driver = require('../config/neo4j');
 
 class KnowledgeRepository {
-  async createNode(nodeData) {
-    const session = driver.session();
+  async createNode(nodeData, tx = null) {
+    const session = tx ? null : driver.session();
+    const runner = tx || session;
     try {
-      // We could link to User here, but for now they are linked to Cards.
-      // To ensure ownership, we should probably link to User.
-      const result = await session.run(`
+      const result = await runner.run(`
         MATCH (u:User {id: $userId})
         CREATE (u)-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode {
           id: $id,
@@ -20,19 +19,20 @@ class KnowledgeRepository {
 
       return result.records[0].get('k').properties;
     } finally {
-      await session.close();
+      if (session) await session.close();
     }
   }
 
-  async createRelationship(sourceId, targetId, relationType) {
-    const session = driver.session();
+  async createRelationship(sourceId, targetId, relationType, userId, tx = null) {
+    const session = tx ? null : driver.session();
+    const runner = tx || session;
     try {
-      const result = await session.run(`
-        MATCH (a:KnowledgeNode {id: $sourceId})
-        MATCH (b:KnowledgeNode {id: $targetId})
+      const result = await runner.run(`
+        MATCH (u:User {id: $userId})-[:OWNS_KNOWLEDGE]->(a:KnowledgeNode {id: $sourceId})
+        MATCH (u)-[:OWNS_KNOWLEDGE]->(b:KnowledgeNode {id: $targetId})
         MERGE (a)-[r:RELATES_TO {type: $relationType}]->(b)
         RETURN a, r, b
-      `, { sourceId, targetId, relationType });
+      `, { sourceId, targetId, relationType, userId });
 
       return {
         sourceId,
@@ -40,15 +40,15 @@ class KnowledgeRepository {
         relationType
       };
     } finally {
-      await session.close();
+      if (session) await session.close();
     }
   }
 
-  async getGraphByUser(userId) {
-    const session = driver.session();
+  async getGraphByUser(userId, tx = null) {
+    const session = tx ? null : driver.session();
+    const runner = tx || session;
     try {
-      // Get nodes owned by user (either via card or direct ownership)
-      const result = await session.run(`
+      const result = await runner.run(`
         MATCH (u:User {id: $userId})
         OPTIONAL MATCH (u)-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode)
         OPTIONAL MATCH (k)-[r:RELATES_TO]->(k2:KnowledgeNode)
@@ -71,7 +71,7 @@ class KnowledgeRepository {
         edges: record.get('edges').filter(e => e.sourceId && e.targetId)
       };
     } finally {
-      await session.close();
+      if (session) await session.close();
     }
   }
 }
