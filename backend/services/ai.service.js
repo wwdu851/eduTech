@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
   }
 
   async inquireOnCard(cardContent, userQuestion) {
@@ -19,7 +19,7 @@ Please provide:
 2. Extract 3-5 key knowledge points as JSON array with structure:
    {
      "label": "knowledge point name",
-     "category": "History|Geography|Culture|Logistics|etc",
+     "category": "HISTORY|ARCHITECTURE|TRADE|CULTURE|FOOD|POLITICS|LOGISTICS|PLANNING|SCIENCE|ENGINEERING|GEOGRAPHY|ECONOMICS",
      "description": "brief description"
    }
 3. Suggest relationships between these knowledge points as JSON array:

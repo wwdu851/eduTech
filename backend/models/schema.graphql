@@ -1,4 +1,29 @@
 # ---------------------------
+# Enums
+# ---------------------------
+enum KanbanColumn {
+  IDEATION_DISCOVERY
+  RESEARCH_INQUIRY
+  SYNTHESIS_KNOWLEDGE
+  TRIP_PLANNING_LOGISTICS
+}
+
+enum KnowledgeCategory {
+  HISTORY
+  ARCHITECTURE
+  TRADE
+  CULTURE
+  FOOD
+  POLITICS
+  LOGISTICS
+  PLANNING
+  SCIENCE
+  ENGINEERING
+  GEOGRAPHY
+  ECONOMICS
+}
+
+# ---------------------------
 # Common Types
 # ---------------------------
 type User {
@@ -8,15 +33,15 @@ type User {
 
 type KnowledgeNode {
   id: ID!
-  label: String          # e.g. "Rammed Earth Technology"
-  category: String       # e.g. "History", "Engineering"
+  label: String
+  category: KnowledgeCategory
   description: String
 }
 
 type Relationship {
   sourceId: ID!
   targetId: ID!
-  relationType: String   # e.g. "-USES->", "-DESCRIBES->"
+  relationType: String
 }
 
 # ---------------------------
@@ -26,22 +51,17 @@ type KanbanCard {
   id: ID!
   title: String
   content: String
-  columnId: String       1. Ideation, 2. Research 3. Synthesis 4. Logistics
+  columnId: KanbanColumn
   tags: [String]
-  knowledgePoints: [KnowledgeNode]  # Related knowledge point
+  knowledgePoints: [KnowledgeNode]
 }
 
 # ---------------------------
 # Queries
 # ---------------------------
 type Query {
-  # Get the board data
   getBoard(userId: ID!): [KanbanCard]
-  
-  # Get the single card data
   getCard(cardId: ID!): KanbanCard
-  
-  # Get knowledge graph
   getKnowledgeGraph(userId: ID!): GraphData
 }
 
@@ -54,24 +74,20 @@ type GraphData {
 # Mutations
 # ---------------------------
 type Mutation {
-  # Kanban Operations
   createCard(input: CreateCardInput!): KanbanCard
-  moveCard(cardId: ID!, newColumnId: String!): KanbanCard
-  
-  # AI Interactions
-  # AI Assist or Deepen Inquiry on each Kanban card
+  moveCard(cardId: ID!, newColumnId: KanbanColumn!): KanbanCard
   startAIInquiry(cardId: ID!, userQuestion: String): AIInquiryResponse
 }
 
 input CreateCardInput {
   title: String!
   content: String
-  columnId: String
+  columnId: KanbanColumn
 }
 
 type AIInquiryResponse {
   inquiryId: ID!
-  answer: String!          # AI Q&A Answer
-  extractedNodes: [KnowledgeNode]   # AI knowledge node extracted
-  extractedEdges: [Relationship]    # AI relationship extracted
+  answer: String!
+  extractedNodes: [KnowledgeNode]
+  extractedEdges: [Relationship]
 }
