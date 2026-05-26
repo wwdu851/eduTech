@@ -6,21 +6,19 @@ class KanbanService {
   }
 
   async getUserBoard(userId) {
-    return await kanbanRepo.getCardsByUser(userId);
+    return await kanbanRepo.getUserBoard(userId);
   }
 
-  async getCard(cardId) {
-    return await kanbanRepo.getCard(cardId);
+  async getCard(userId, cardId) {
+    return await kanbanRepo.getCard(userId, cardId);
   }
 
-  async moveCard(cardId, newColumnId) {
-    return await kanbanRepo.moveCard(cardId, newColumnId);
+  async moveCard(userId, cardId, newColumnId) {
+    return await kanbanRepo.moveCard(userId, cardId, newColumnId);
   }
 
-  async linkKnowledgeToCard(cardId, knowledgeNodeIds) {
-    for (const nodeId of knowledgeNodeIds) {
-      await kanbanRepo.linkKnowledgeToCard(cardId, nodeId);
-    }
+  async linkKnowledgeToCard(userId, cardId, knowledgeNodeIds) {
+    return await kanbanRepo.linkKnowledgeToCard(userId, cardId, knowledgeNodeIds);
   }
 }
 

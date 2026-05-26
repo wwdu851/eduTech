@@ -1,6 +1,7 @@
 // Kanban CRUD Operations
 const driver = require('../config/neo4j');
 const { v4: uuidv4 } = require('uuid');
+const safetyService = require('../services/safety.service');
 
 class KanbanRepository {
   async createCard(userId, input) {
@@ -20,9 +21,9 @@ class KanbanRepository {
       `, {
         userId,
         cardId,
-        title: input.title,
-        content: input.content || '',
-        columnId: input.columnId || '1'
+        title: safetyService.sanitizeInput(input.title),
+        content: safetyService.sanitizeInput(input.content || ''),
+        columnId: input.columnId || 'IDEATION_DISCOVERY'
       });
 
       const card = result.records[0].get('c').properties;
@@ -32,7 +33,7 @@ class KanbanRepository {
     }
   }
 
-  async getCardsByUser(userId) {
+  async getUserBoard(userId) {
     const session = driver.session();
     try {
       const result = await session.run(`
@@ -51,14 +52,14 @@ class KanbanRepository {
     }
   }
 
-  async getCard(cardId) {
+  async getCard(userId, cardId) {
     const session = driver.session();
     try {
       const result = await session.run(`
-        MATCH (c:KanbanCard {id: $cardId})
+        MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
         OPTIONAL MATCH (c)-[:CONTAINS]->(k:KnowledgeNode)
         RETURN c, collect(k) as knowledgePoints
-      `, { cardId });
+      `, { userId, cardId });
 
       if (result.records.length === 0) return null;
 
@@ -72,29 +73,32 @@ class KanbanRepository {
     }
   }
 
-  async moveCard(cardId, newColumnId) {
+  async moveCard(userId, cardId, newColumnId) {
     const session = driver.session();
     try {
       const result = await session.run(`
-        MATCH (c:KanbanCard {id: $cardId})
+        MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
         SET c.columnId = $newColumnId
         RETURN c
-      `, { cardId, newColumnId });
+      `, { userId, cardId, newColumnId });
 
+      if (result.records.length === 0) throw new Error('Card not found or access denied');
       return result.records[0].get('c').properties;
     } finally {
       await session.close();
     }
   }
 
-  async linkKnowledgeToCard(cardId, knowledgeNodeId) {
+  async linkKnowledgeToCard(userId, cardId, knowledgeNodeIds) {
     const session = driver.session();
     try {
-      await session.run(`
-        MATCH (c:KanbanCard {id: $cardId})
-        MATCH (k:KnowledgeNode {id: $knowledgeNodeId})
-        MERGE (c)-[:CONTAINS]->(k)
-      `, { cardId, knowledgeNodeId });
+      for (const nodeId of knowledgeNodeIds) {
+        await session.run(`
+          MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
+          MATCH (k:KnowledgeNode {id: $nodeId})
+          MERGE (c)-[:CONTAINS]->(k)
+        `, { userId, cardId, nodeId });
+      }
     } finally {
       await session.close();
     }

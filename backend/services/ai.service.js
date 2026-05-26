@@ -1,9 +1,30 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const pRetry = require('p-retry');
 
 class AIService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    this.model = this.genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+        },
+      ]
+    });
   }
 
   async inquireOnCard(cardContent, userQuestion) {
@@ -37,19 +58,36 @@ Return ONLY valid JSON with this structure:
 }
 `;
 
-    const result = await this.model.generateContent(prompt);
-    const response = result.response.text();
-    
-    // Parse JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Invalid AI response format');
-    
-    return JSON.parse(jsonMatch[0]);
-  }
+    const runAIGeneration = async () => {
+      try {
+        const result = await this.model.generateContent(prompt);
+        const response = result.response.text();
+        
+        // Parse JSON from response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Invalid AI response format');
+        
+        return JSON.parse(jsonMatch[0]);
+      } catch (error) {
+        // If it's a transient error, retry. If it's a safety block, don't retry.
+        if (error.message.includes('SAFETY')) {
+          throw new pRetry.AbortError(error);
+        }
+        throw error;
+      }
+    };
 
-  async extractKnowledgePoints(text) {
-    const prompt = `Extract 3-5 key knowledge points from this text as JSON array: ${text}`;
-    const result = await this.model.generateContent(prompt);
+    return await pRetry(runAIGeneration, {
+      retries: 3,
+      onFailedAttempt: error => {
+        console.log(`AI Inquiry attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`);
+      }
+    }).catch(error => {
+      if (error instanceof pRetry.AbortError) {
+        throw new Error(`AI Safety Block: ${error.message}`);
+      }
+      throw new Error('AI Service Temporarily Unavailable. Please try again later.');
+    });
   }
 }
 

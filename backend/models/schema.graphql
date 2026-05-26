@@ -28,7 +28,22 @@ enum KnowledgeCategory {
 # ---------------------------
 type User {
   id: ID!
-  name: String
+  email: String!
+}
+
+type AuthPayload {
+  token: String
+  user: User
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
 }
 
 type KnowledgeNode {
@@ -60,9 +75,9 @@ type KanbanCard {
 # Queries
 # ---------------------------
 type Query {
-  getBoard(userId: ID!): [KanbanCard]
+  getBoard: [KanbanCard]
   getCard(cardId: ID!): KanbanCard
-  getKnowledgeGraph(userId: ID!): GraphData
+  getKnowledgeGraph: GraphData
 }
 
 type GraphData {
@@ -74,6 +89,8 @@ type GraphData {
 # Mutations
 # ---------------------------
 type Mutation {
+  register(input: RegisterInput!): AuthPayload
+  login(input: LoginInput!): AuthPayload
   createCard(input: CreateCardInput!): KanbanCard
   moveCard(cardId: ID!, newColumnId: KanbanColumn!): KanbanCard
   startAIInquiry(cardId: ID!, userQuestion: String): AIInquiryResponse
