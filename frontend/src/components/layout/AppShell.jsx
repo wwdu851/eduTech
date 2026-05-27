@@ -65,7 +65,7 @@ export default function AppShell({ children, title, showHelp = true }) {
         <button
           type="button"
           onClick={() => setTrainingOpen(true)}
-          className="fixed bottom-6 right-6 z-30 flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-24 right-6 z-30 flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white shadow-lg transition-transform hover:scale-105"
           style={{ background: 'var(--brand-purple)' }}
           title="Learning guide"
           aria-label="Open learning guide"

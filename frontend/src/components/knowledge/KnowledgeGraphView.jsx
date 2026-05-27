@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import ForceGraph2D from 'react-force-graph-2d';
 import LoadingSpinner from '../shared/LoadingSpinner';
 import NodeDetailPanel from './NodeDetailPanel';
-import { getCategoryColor } from '../../utils/graphColors';
+import { getCategoryColor, CATEGORY_COLORS } from '../../utils/graphColors';
 
 export default function KnowledgeGraphView() {
   const { nodes: rawNodes, edges: rawEdges, loading } = useSelector(state => state.knowledge);
@@ -123,18 +123,13 @@ export default function KnowledgeGraphView() {
           />
 
           <div className="absolute bottom-4 left-4 flex gap-2">
-            <div className="rounded-lg border bg-white/80 p-2 text-[10px] backdrop-blur-sm" style={{ borderColor: 'var(--border)' }}>
-              <p className="font-semibold mb-1">Legend</p>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                {Object.entries({
-                  'HISTORY': '#92400E',
-                  'CULTURE': '#9D174D',
-                  'SCIENCE': '#14532D',
-                  'TRADE': '#991B1B',
-                }).map(([cat, col]) => (
-                  <div key={cat} className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: col }} />
-                    <span>{cat}</span>
+            <div className="rounded-lg border bg-white/90 p-3 text-[10px] backdrop-blur-sm shadow-sm" style={{ borderColor: 'var(--border)' }}>
+              <p className="font-bold mb-2 uppercase tracking-wider text-slate-500">Knowledge Categories</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
+                {Object.entries(CATEGORY_COLORS).map(([cat, col]) => (
+                  <div key={cat} className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: col }} />
+                    <span className="font-medium text-slate-700">{cat}</span>
                   </div>
                 ))}
               </div>

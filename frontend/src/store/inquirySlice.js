@@ -57,6 +57,16 @@ const inquirySlice = createSlice({
       if (!state.conversations[cardId]) state.conversations[cardId] = [];
       state.conversations[cardId].push(message);
     },
+    updateSuggestedCardStatus(state, action) {
+      const { cardId, messageIndex, suggestionIndex, status } = action.payload;
+      const conversation = state.conversations[cardId];
+      if (conversation && conversation[messageIndex] && conversation[messageIndex].suggestedCards) {
+        const suggestion = conversation[messageIndex].suggestedCards[suggestionIndex];
+        if (suggestion) {
+          suggestion.status = status;
+        }
+      }
+    },
     clearConversation(state, action) {
       state.conversations[action.payload] = [];
     },
@@ -72,7 +82,7 @@ const inquirySlice = createSlice({
           role: 'ai',
           content: result.answer,
           timestamp: Date.now(),
-          suggestedCards: result.suggestedCards || [],
+          suggestedCards: (result.suggestedCards || []).map(s => ({ ...s, status: 'pending' })),
         });
       })
       .addCase(sendInquiry.rejected, (state, action) => {
@@ -82,6 +92,6 @@ const inquirySlice = createSlice({
   },
 });
 
-export const { setActiveCard, addMessage, clearConversation } = inquirySlice.actions;
+export const { setActiveCard, addMessage, updateSuggestedCardStatus, clearConversation } = inquirySlice.actions;
 export const selectConversation = (cardId) => (state) => state.inquiry.conversations[cardId] || [];
 export default inquirySlice.reducer;

@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { Plus, X, Layers } from 'lucide-react';
 import { createCard, fetchBoard, selectColumns } from '../../store/boardSlice';
+import { updateSuggestedCardStatus } from '../../store/inquirySlice';
 
 const COLUMN_LABELS = {
   IDEATION_DISCOVERY: 'Ideation & Discovery',
@@ -10,11 +12,10 @@ const COLUMN_LABELS = {
   TRIP_PLANNING_LOGISTICS: 'Trip Planning & Logistics',
 };
 
-export default function SuggestedCardsPanel({ suggestions, messageKey }) {
+export default function SuggestedCardsPanel({ suggestions, messageKey, messageIndex }) {
   const dispatch = useDispatch();
+  const { cardId } = useParams();
   const columns = useSelector(selectColumns);
-  const [dismissed, setDismissed] = useState(new Set());
-  const [added, setAdded] = useState(new Set());
   const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [adding, setAdding] = useState(false);
   const addingRef = useRef(false);
@@ -24,18 +25,23 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
 
   if (!suggestions?.length) return null;
 
-  const visible = suggestions.filter((s, i) => !dismissed.has(i));
-  if (visible.length === 0) return null;
-
-  const grouped = columns.reduce((acc, col) => {
-    acc[col.id] = [];
+  // Compute visible suggestions based on Redux status
+  const grouped = useMemo(() => {
+    const acc = columns.reduce((acc, col) => {
+      acc[col.id] = [];
+      return acc;
+    }, {});
+    
+    suggestions.forEach((s, i) => {
+      if (s.status !== 'dismissed' && acc[s.columnId]) {
+        acc[s.columnId].push({ ...s, index: i });
+      }
+    });
     return acc;
-  }, {});
-  suggestions.forEach((s, i) => {
-    if (!dismissed.has(i) && grouped[s.columnId]) {
-      grouped[s.columnId].push({ ...s, index: i });
-    }
-  });
+  }, [suggestions, columns]);
+
+  const hasVisible = suggestions.some(s => s.status !== 'dismissed');
+  if (!hasVisible) return null;
 
   const addOne = async (suggestion, index) => {
     if (addingRef.current) return;
@@ -50,7 +56,12 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
         idempotencyKey,
       }));
       if (result.meta.requestStatus === 'fulfilled') {
-        setAdded(prev => new Set(prev).add(index));
+        dispatch(updateSuggestedCardStatus({
+          cardId,
+          messageIndex,
+          suggestionIndex: index,
+          status: 'added'
+        }));
         dispatch(fetchBoard());
       }
     } finally {
@@ -65,9 +76,10 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
     setShowConfirmAll(false);
     setAdding(true);
     try {
-      for (const s of suggestions) {
-        const i = suggestions.indexOf(s);
-        if (dismissed.has(i) || added.has(i)) continue;
+      for (let i = 0; i < suggestions.length; i++) {
+        const s = suggestions[i];
+        if (s.status === 'dismissed' || s.status === 'added') continue;
+        
         const idempotencyKey = makeIdempotencyKey();
         const result = await dispatch(createCard({
           title: s.title,
@@ -76,7 +88,12 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
           idempotencyKey,
         }));
         if (result.meta.requestStatus === 'fulfilled') {
-          setAdded(prev => new Set(prev).add(i));
+          dispatch(updateSuggestedCardStatus({
+            cardId,
+            messageIndex,
+            suggestionIndex: i,
+            status: 'added'
+          }));
         }
       }
       dispatch(fetchBoard());
@@ -86,7 +103,7 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
     }
   };
 
-  const pendingCount = suggestions.filter((_, i) => !dismissed.has(i) && !added.has(i)).length;
+  const pendingCount = suggestions.filter(s => s.status === 'pending').length;
 
   return (
     <div className="mt-3 rounded-xl border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
@@ -122,10 +139,15 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
                   <SuggestionRow
                     key={`${messageKey}-${s.index}`}
                     suggestion={s}
-                    isAdded={added.has(s.index)}
+                    isAdded={s.status === 'added'}
                     isAdding={adding}
                     onAdd={() => addOne(s, s.index)}
-                    onDismiss={() => setDismissed(prev => new Set(prev).add(s.index))}
+                    onDismiss={() => dispatch(updateSuggestedCardStatus({
+                      cardId,
+                      messageIndex,
+                      suggestionIndex: s.index,
+                      status: 'dismissed'
+                    }))}
                   />
                 ))}
               </div>
@@ -139,7 +161,7 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
             <h4 className="font-semibold">Add all suggested cards?</h4>
             <ul className="mt-2 max-h-40 overflow-y-auto text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {suggestions.filter((_, i) => !dismissed.has(i) && !added.has(i)).map((s, i) => (
+              {suggestions.filter(s => s.status === 'pending').map((s, i) => (
                 <li key={i} className="py-0.5">• {s.title}</li>
               ))}
             </ul>

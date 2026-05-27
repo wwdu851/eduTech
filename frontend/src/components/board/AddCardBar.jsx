@@ -43,12 +43,23 @@ export default function AddCardBar() {
     }
   };
 
+  const cards = useSelector(state => state.board.cards);
+  const cardList = Object.values(cards);
+
   const openAiForLast = () => {
-    if (lastCardId) navigate(`/inquiry/${lastCardId}`);
+    if (lastCardId) {
+      navigate(`/inquiry/${lastCardId}`);
+    } else if (cardList.length > 0) {
+      // If no card was just added, open AI for the most recent card
+      const sorted = [...cardList].sort((a, b) => 
+        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+      navigate(`/inquiry/${sorted[0].id}`);
+    }
   };
 
   return (
-    <div className="sticky bottom-0">
+    <div className="sticky bottom-0 z-10">
       {errorMsg && (
         <div className="px-4 pb-2 md:px-6">
           <ErrorBanner message={errorMsg} onDismiss={() => setErrorMsg(null)} />
@@ -56,7 +67,7 @@ export default function AddCardBar() {
       )}
       <form
         onSubmit={handleAdd}
-        className="flex flex-wrap items-center gap-3 border-t px-4 py-4 md:px-6"
+        className="flex flex-wrap items-center gap-3 border-t px-4 py-4 md:px-6 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]"
         style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}
       >
       <input
@@ -82,10 +93,10 @@ export default function AddCardBar() {
       <button
         type="button"
         onClick={openAiForLast}
-        disabled={!lastCardId || adding || loading}
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-opacity disabled:opacity-40"
+        disabled={cardList.length === 0 || adding || loading}
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
         style={{ background: 'var(--brand-purple)' }}
-        title="Open AI inquiry for last card"
+        title="Open AI inquiry and knowledge graph"
       >
         <Sparkles size={18} />
       </button>

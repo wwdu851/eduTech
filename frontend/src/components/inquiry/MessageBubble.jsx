@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import SuggestedCardsPanel from './SuggestedCardsPanel';
 
-export default function MessageBubble({ message, messageKey }) {
+export default function MessageBubble({ message, messageKey, index }) {
   const isUser = message.role === 'user';
 
   if (isUser) {
@@ -33,7 +33,11 @@ export default function MessageBubble({ message, messageKey }) {
           >
             <p className="whitespace-pre-wrap">{message.content}</p>
           </div>
-          <SuggestedCardsPanel suggestions={message.suggestedCards} messageKey={messageKey} />
+          <SuggestedCardsPanel 
+            suggestions={message.suggestedCards} 
+            messageKey={messageKey} 
+            messageIndex={index}
+          />
         </div>
       </div>
     </div>

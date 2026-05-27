@@ -57,7 +57,7 @@ export default function InquiryChat({ cardId, cardTitle }) {
           </p>
         )}
         {messages.map((msg, i) => (
-          <MessageBubble key={`${msg.timestamp}-${i}`} message={msg} messageKey={`${cardId}-${msg.timestamp}-${i}`} />
+          <MessageBubble key={`${msg.timestamp}-${i}`} message={msg} messageKey={`${cardId}-${msg.timestamp}-${i}`} index={i} />
         ))}
         {loading && (
           <p className="text-center text-sm animate-pulse" style={{ color: 'var(--text-muted)' }}>
