@@ -4,24 +4,28 @@ export default function NodeDetailPanel({ node, onClose }) {
   const tagClass = node.category ? `tag-${node.category}` : 'tag-default';
 
   return (
-    <div className="absolute right-3 top-3 z-10 w-56 rounded-xl border bg-white p-4 shadow-lg" style={{ borderColor: 'var(--border)' }}>
+    <div className="absolute right-3 top-3 z-10 w-64 rounded-xl border bg-white/90 p-4 shadow-xl backdrop-blur-md" style={{ borderColor: 'var(--border)' }}>
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-2 top-2 text-xs text-slate-400 hover:text-slate-600"
+        className="absolute right-3 top-3 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
       >
-        Close
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
-      <h3 className="mb-2 pr-8 font-semibold text-sm">{node.label}</h3>
-      {node.category && (
-        <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${tagClass}`}>
-          {node.category}
-        </span>
-      )}
+      <div className="mb-3">
+        <h3 className="pr-8 font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{node.label}</h3>
+        {node.category && (
+          <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tagClass}`}>
+            {node.category}
+          </span>
+        )}
+      </div>
       {node.description && (
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {node.description}
-        </p>
+        <div className="max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {node.description}
+          </p>
+        </div>
       )}
     </div>
   );

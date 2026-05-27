@@ -21,7 +21,7 @@ const limiter = rateLimit({
 // Specific limiter for AI inquiries to prevent "Wallet Stress"
 const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 5, // Reduced from 10 to be tighter
+  limit: 50, // Increased to 50 as requested
   message: 'Too many AI inquiries from this IP, please try again after an hour',
   standardHeaders: 'draft-7',
   legacyHeaders: false,
@@ -140,9 +140,9 @@ async function startServer() {
   }));
 
   app.use(express.json());
+  app.use('/graphql', aiLimiter);
   if (env.NODE_ENV === 'production') {
     app.use(limiter);
-    app.use('/graphql', aiLimiter);
   }
 
   // Apollo Server

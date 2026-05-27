@@ -66,13 +66,25 @@ export default function CardActionMenu({ card }) {
             className="absolute right-0 mt-1 min-w-[160px] rounded-xl border bg-white py-1 shadow-lg"
             style={{ borderColor: 'var(--border)' }}
           >
-            <button type="button" className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50" onClick={() => { setTitle(card.title); setModal('title'); setOpen(false); }}>
+            <button
+              type="button"
+              className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+              onClick={(e) => { e.stopPropagation(); setTitle(card.title); setModal('title'); setOpen(false); }}
+            >
               Edit title
             </button>
-            <button type="button" className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50" onClick={() => { setContent(card.content || ''); setModal('content'); setOpen(false); }}>
+            <button
+              type="button"
+              className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50"
+              onClick={(e) => { e.stopPropagation(); setContent(card.content || ''); setModal('content'); setOpen(false); }}
+            >
               {card.content ? 'Edit content' : 'Add content'}
             </button>
-            <button type="button" className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { setModal('delete'); setOpen(false); }}>
+            <button
+              type="button"
+              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              onClick={(e) => { e.stopPropagation(); setModal('delete'); setOpen(false); }}
+            >
               Delete card
             </button>
           </div>

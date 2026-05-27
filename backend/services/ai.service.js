@@ -75,6 +75,17 @@ Return ONLY valid JSON:
           suggestedCards: Array.isArray(parsed.suggestedCards) ? parsed.suggestedCards : [],
         };
       } catch (error) {
+        console.error('--- AI INQUIRY FAILURE ---');
+        console.error('Error:', error.message);
+        try {
+          const result = await this.model.generateContent(prompt);
+          const responseText = result.response.text();
+          console.error('Raw AI Response Text:', responseText);
+        } catch (innerError) {
+          console.error('Could not retrieve raw response for logging:', innerError.message);
+        }
+        console.error('---------------------------');
+
         if (error.message?.includes('SAFETY')) {
           throw new AbortError(error);
         }

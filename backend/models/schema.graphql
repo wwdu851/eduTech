@@ -102,6 +102,7 @@ input CreateCardInput {
   title: String!
   content: String
   columnId: KanbanColumn
+  idempotencyKey: String
 }
 
 input UpdateCardInput {

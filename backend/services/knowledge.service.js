@@ -1,6 +1,7 @@
 const knowledgeRepo = require('../repositories/knowledge.repository');
 const { v4: uuidv4 } = require('uuid');
 const driver = require('../config/neo4j');
+const safetyService = require('./safety.service');
 
 const VALID_CATEGORIES = new Set([
   'HISTORY', 'ARCHITECTURE', 'TRADE', 'CULTURE', 'FOOD', 'POLITICS',
@@ -29,12 +30,14 @@ class KnowledgeService {
 
         for (const point of knowledgePoints) {
           try {
-            const label = normalizeLabel(point.label);
-            if (!label) continue;
+            const rawLabel = normalizeLabel(point.label);
+            if (!rawLabel) continue;
 
+            const label = safetyService.sanitizeInput(rawLabel, { allowedTags: [] });
             const category = normalizeCategory(point.category);
-            const description = String(point.description || point.label || label).trim();
-            if (!description) continue;
+            const description = safetyService.sanitizeInput(String(point.description || point.label || rawLabel).trim());
+            
+            if (!label || !description) continue;
 
             const nodeId = uuidv4();
             const node = await knowledgeRepo.createNode({

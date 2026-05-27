@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Plus, X, Layers } from 'lucide-react';
 import { createCard, fetchBoard, selectColumns } from '../../store/boardSlice';
@@ -17,6 +17,10 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
   const [added, setAdded] = useState(new Set());
   const [showConfirmAll, setShowConfirmAll] = useState(false);
   const [adding, setAdding] = useState(false);
+  const addingRef = useRef(false);
+
+  const makeIdempotencyKey = () =>
+    (crypto?.randomUUID?.() || `idem-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
   if (!suggestions?.length) return null;
 
@@ -34,36 +38,52 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
   });
 
   const addOne = async (suggestion, index) => {
+    if (addingRef.current) return;
+    addingRef.current = true;
     setAdding(true);
-    const result = await dispatch(createCard({
-      title: suggestion.title,
-      content: suggestion.content || '',
-      columnId: suggestion.columnId,
-    }));
-    if (result.meta.requestStatus === 'fulfilled') {
-      setAdded(prev => new Set(prev).add(index));
-      dispatch(fetchBoard());
+    try {
+      const idempotencyKey = makeIdempotencyKey();
+      const result = await dispatch(createCard({
+        title: suggestion.title,
+        content: suggestion.content || '',
+        columnId: suggestion.columnId,
+        idempotencyKey,
+      }));
+      if (result.meta.requestStatus === 'fulfilled') {
+        setAdded(prev => new Set(prev).add(index));
+        dispatch(fetchBoard());
+      }
+    } finally {
+      addingRef.current = false;
+      setAdding(false);
     }
-    setAdding(false);
   };
 
   const addAll = async () => {
+    if (addingRef.current) return;
+    addingRef.current = true;
     setShowConfirmAll(false);
     setAdding(true);
-    for (const s of suggestions) {
-      const i = suggestions.indexOf(s);
-      if (dismissed.has(i) || added.has(i)) continue;
-      const result = await dispatch(createCard({
-        title: s.title,
-        content: s.content || '',
-        columnId: s.columnId,
-      }));
-      if (result.meta.requestStatus === 'fulfilled') {
-        setAdded(prev => new Set(prev).add(i));
+    try {
+      for (const s of suggestions) {
+        const i = suggestions.indexOf(s);
+        if (dismissed.has(i) || added.has(i)) continue;
+        const idempotencyKey = makeIdempotencyKey();
+        const result = await dispatch(createCard({
+          title: s.title,
+          content: s.content || '',
+          columnId: s.columnId,
+          idempotencyKey,
+        }));
+        if (result.meta.requestStatus === 'fulfilled') {
+          setAdded(prev => new Set(prev).add(i));
+        }
       }
+      dispatch(fetchBoard());
+    } finally {
+      addingRef.current = false;
+      setAdding(false);
     }
-    dispatch(fetchBoard());
-    setAdding(false);
   };
 
   const pendingCount = suggestions.filter((_, i) => !dismissed.has(i) && !added.has(i)).length;
@@ -125,7 +145,13 @@ export default function SuggestedCardsPanel({ suggestions, messageKey }) {
             </ul>
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setShowConfirmAll(false)} className="rounded-lg px-3 py-1.5 text-sm hover:bg-slate-100">Cancel</button>
-              <button type="button" onClick={addAll} className="rounded-lg px-3 py-1.5 text-sm font-medium text-white" style={{ background: 'var(--brand-blue)' }}>
+              <button
+                type="button"
+                onClick={addAll}
+                disabled={adding}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                style={{ background: 'var(--brand-blue)' }}
+              >
                 Add all
               </button>
             </div>

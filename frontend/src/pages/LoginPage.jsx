@@ -81,12 +81,10 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-1">
-            {mode === 'login' ? 'Welcome back' : 'Create your account'}
+            Sign in to ExploreIQ
           </h2>
           <p className="text-slate-500 text-sm mb-8">
-            {mode === 'login'
-              ? 'Sign in to continue your learning journey'
-              : 'Start planning your experiential learning trip'}
+            Sign in to continue your learning journey
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -156,12 +154,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
-            {' '}
-            <button onClick={switchMode} className="font-semibold cursor-pointer" style={{ color: 'var(--brand-blue)' }}>
-              {mode === 'login' ? 'Sign up' : 'Sign in'}
-            </button>
+          <p className="text-center text-sm text-slate-400 mt-6 italic">
+            Registration is currently closed to new users.
           </p>
         </div>
       </div>

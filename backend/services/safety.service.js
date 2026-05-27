@@ -15,7 +15,8 @@ class SafetyService {
     this.createCardSchema = z.object({
       title: z.string().min(3).max(100),
       content: z.string().max(5000).optional(),
-      columnId: this.columnIdEnum.optional()
+      columnId: this.columnIdEnum.optional(),
+      idempotencyKey: z.string().min(8).max(200).optional()
     });
 
     this.updateCardSchema = z.object({
@@ -95,12 +96,16 @@ class SafetyService {
           columnId: raw.columnId,
           rationale: raw.rationale || ''
         });
-        const title = this.sanitizeInput(parsed.title);
+        
+        // For titles, we don't want ANY HTML tags
+        const title = this.sanitizeInput(parsed.title, { allowedTags: [] });
         const content = this.sanitizeInput(parsed.content || '');
         const rationale = this.sanitizeInput(parsed.rationale || '');
+        
         this.moderateContent(title);
         this.moderateContent(content);
         this.moderateContent(rationale);
+        
         valid.push({
           title,
           content,
@@ -115,14 +120,28 @@ class SafetyService {
     return valid;
   }
 
-  sanitizeInput(input) {
+  sanitizeInput(input, options = {}) {
     if (typeof input !== 'string') return input;
     
-    // Allow line breaks and basic formatting for better UX
-    return sanitizeHtml(input, {
-      allowedTags: ['br', 'p', 'b', 'i', 'strong', 'em'], 
+    const allowedTags = options.allowedTags !== undefined 
+      ? options.allowedTags 
+      : ['br', 'p', 'b', 'i', 'strong', 'em'];
+
+    const sanitized = sanitizeHtml(input, {
+      allowedTags,
       allowedAttributes: {}
     }).trim();
+
+    // Decode HTML entities that sanitize-html automatically creates.
+    // We do this because React already protects against XSS when rendering strings,
+    // and showing "&amp;" to users is confusing.
+    return sanitized
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'");
   }
 }
 

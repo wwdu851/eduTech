@@ -25,20 +25,8 @@ module.exports = {
   },
 
   Mutation: {
-    register: async (_, { input }, { res }) => {
-      safetyService.validateRegisterInput(input);
-      const { token, user } = await authService.register(input.email, input.password);
-      
-      if (res) {
-        res.cookie('token', token, {
-          httpOnly: true,
-          secure: env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
-      }
-
-      return { token, user };
+    register: async () => {
+      throw new Error('Registration is currently disabled. Please contact the administrator.');
     },
 
     login: async (_, { input }, { res }) => {
@@ -60,14 +48,21 @@ module.exports = {
     createCard: async (_, { input }, { userId }) => {
       if (!userId) throw new Error('Unauthorized');
       safetyService.validateCardInput(input);
-      return await kanbanService.createCard(userId, input);
+      
+      const sanitized = {
+        ...input,
+        title: safetyService.sanitizeInput(input.title, { allowedTags: [] }),
+        content: input.content ? safetyService.sanitizeInput(input.content) : ''
+      };
+      
+      return await kanbanService.createCard(userId, sanitized);
     },
 
     updateCard: async (_, { cardId, input }, { userId }) => {
       if (!userId) throw new Error('Unauthorized');
       safetyService.validateUpdateCardInput(input);
       const sanitized = {};
-      if (input.title !== undefined) sanitized.title = safetyService.sanitizeInput(input.title);
+      if (input.title !== undefined) sanitized.title = safetyService.sanitizeInput(input.title, { allowedTags: [] });
       if (input.content !== undefined) sanitized.content = safetyService.sanitizeInput(input.content);
       if (input.columnId !== undefined) sanitized.columnId = input.columnId;
       return await kanbanService.updateCard(userId, cardId, sanitized);

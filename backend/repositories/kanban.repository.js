@@ -7,6 +7,41 @@ class KanbanRepository {
   async createCard(userId, input) {
     const session = driver.session();
     try {
+      const title = safetyService.sanitizeInput(input.title);
+      const content = safetyService.sanitizeInput(input.content || '');
+      const columnId = input.columnId || 'IDEATION_DISCOVERY';
+      const idempotencyKey = input.idempotencyKey;
+
+      // Idempotent create prevents duplicate cards when the frontend retries
+      // (e.g., Safari lag/double-click). Key is scoped per user relationship.
+      if (idempotencyKey) {
+        const cardId = uuidv4();
+        const result = await session.run(`
+          MATCH (u:User {id: $userId})
+          MERGE (u)-[:CREATED]->(c:KanbanCard { idempotencyKey: $idempotencyKey })
+          ON CREATE SET
+            c.id = $cardId,
+            c.title = $title,
+            c.content = $content,
+            c.columnId = $columnId,
+            c.tags = $tags,
+            c.createdAt = datetime()
+          RETURN c
+        `, {
+          userId,
+          cardId,
+          idempotencyKey,
+          title,
+          content,
+          columnId,
+          tags: []
+        });
+
+        const card = result.records[0].get('c').properties;
+        return { ...card, id: card.id, tags: card.tags || [] };
+      }
+
+      // Fallback to non-idempotent create when no key is provided.
       const cardId = uuidv4();
       const result = await session.run(`
         MATCH (u:User {id: $userId})
@@ -22,9 +57,9 @@ class KanbanRepository {
       `, {
         userId,
         cardId,
-        title: safetyService.sanitizeInput(input.title),
-        content: safetyService.sanitizeInput(input.content || ''),
-        columnId: input.columnId || 'IDEATION_DISCOVERY',
+        title,
+        content,
+        columnId,
         tags: []
       });
 

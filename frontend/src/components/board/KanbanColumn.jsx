@@ -1,7 +1,7 @@
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import KanbanCard from './KanbanCard';
 
-export default function KanbanColumn({ column, cards }) {
+export default function KanbanColumn({ column, cards, onCardClick }) {
   return (
     <div className="flex min-w-[260px] flex-1 flex-col rounded-xl p-3" style={{ background: 'var(--surface-2)' }}>
       <h2 className="mb-3 px-1 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
@@ -23,7 +23,11 @@ export default function KanbanColumn({ column, cards }) {
                     {...dragProvided.dragHandleProps}
                     className={dragSnapshot.isDragging ? 'opacity-90 rotate-1' : ''}
                   >
-                    <KanbanCard card={card} index={index} />
+                    <KanbanCard
+                      card={card}
+                      isDragging={dragSnapshot.isDragging}
+                      onOpenDetails={() => onCardClick?.(card)}
+                    />
                   </div>
                 )}
               </Draggable>

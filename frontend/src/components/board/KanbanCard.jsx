@@ -3,17 +3,26 @@ import { Sparkles } from 'lucide-react';
 import { getCardTags, getColumnAction } from '../../utils/columnActions';
 import CardActionMenu from './CardActionMenu';
 
-export default function KanbanCard({ card }) {
+export default function KanbanCard({ card, onOpenDetails, isDragging = false }) {
   const navigate = useNavigate();
   const action = getColumnAction(card.columnId);
   const tags = getCardTags(card);
 
-  const openInquiry = () => navigate(`/inquiry/${card.id}`);
+  const openInquiry = (e) => {
+    e?.stopPropagation?.();
+    navigate(`/inquiry/${card.id}`);
+  };
+
+  const openDetails = () => {
+    if (isDragging) return;
+    onOpenDetails?.();
+  };
 
   return (
     <div
       className="relative rounded-xl border bg-white p-4 pt-8 shadow-sm transition-shadow hover:shadow-md"
       style={{ borderColor: 'var(--border)' }}
+      onClick={() => openDetails()}
     >
       <CardActionMenu card={card} />
       <h3 className="mb-2 pr-6 font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
