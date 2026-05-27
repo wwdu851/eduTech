@@ -38,7 +38,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
             <Sparkles size={20} className="text-white" />
           </div>
-          <span className="text-white font-semibold text-lg tracking-tight">ExploreIQ</span>
+          <span className="text-white font-semibold text-lg tracking-tight">EduTech</span>
         </div>
 
         <div>
@@ -77,11 +77,11 @@ export default function LoginPage() {
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
               <Sparkles size={16} className="text-white" />
             </div>
-            <span className="font-semibold text-slate-800">ExploreIQ</span>
+            <span className="font-semibold text-slate-800">EduTech</span>
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-1">
-            Sign in to ExploreIQ
+            Sign in to EduTech
           </h2>
           <p className="text-slate-500 text-sm mb-8">
             Sign in to continue your learning journey
