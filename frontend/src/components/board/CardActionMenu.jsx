@@ -130,9 +130,16 @@ export default function CardActionMenu({ card }) {
   );
 }
 
-function Modal({ title, children }) {
+function Modal({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15, 23, 42, 0.5)' }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(15, 23, 42, 0.5)' }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose?.();
+      }}
+    >
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
         <h3 className="mb-4 text-lg font-semibold">{title}</h3>
         {children}
