@@ -1,7 +1,19 @@
+import { useDispatch } from 'react-redux';
+import { Trash2 } from 'lucide-react';
+import { deleteKnowledgeNode } from '../../store/knowledgeSlice';
+
 export default function NodeDetailPanel({ node, onClose }) {
+  const dispatch = useDispatch();
   if (!node) return null;
 
   const tagClass = node.category ? `tag-${node.category}` : 'tag-default';
+
+  const handleDelete = async () => {
+    if (window.confirm(`Delete knowledge node "${node.label}"?`)) {
+      await dispatch(deleteKnowledgeNode(node.id));
+      onClose?.();
+    }
+  };
 
   return (
     <div className="absolute right-3 top-3 z-10 w-64 rounded-xl border bg-white/90 p-4 shadow-xl backdrop-blur-md" style={{ borderColor: 'var(--border)' }}>
@@ -27,6 +39,16 @@ export default function NodeDetailPanel({ node, onClose }) {
           </p>
         </div>
       )}
+      <div className="mt-4 pt-3 border-t flex justify-end" style={{ borderColor: 'var(--border)' }}>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <Trash2 size={12} />
+          Delete Node
+        </button>
+      </div>
     </div>
   );
 }

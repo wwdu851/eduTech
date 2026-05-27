@@ -76,6 +76,22 @@ class KnowledgeRepository {
       if (session) await session.close();
     }
   }
+
+  async deleteNode(userId, nodeId) {
+    const session = driver.session();
+    try {
+      const result = await session.run(`
+        MATCH (u:User {id: $userId})-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode {id: $nodeId})
+        DETACH DELETE k
+        RETURN count(k) as deleted
+      `, { userId, nodeId });
+
+      const deleted = result.records[0]?.get('deleted')?.toNumber?.() ?? result.records[0]?.get('deleted') ?? 0;
+      return deleted > 0;
+    } finally {
+      await session.close();
+    }
+  }
 }
 
 module.exports = new KnowledgeRepository();

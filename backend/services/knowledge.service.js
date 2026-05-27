@@ -118,6 +118,10 @@ class KnowledgeService {
       }))
     };
   }
+
+  async deleteNode(userId, nodeId) {
+    return await knowledgeRepo.deleteNode(userId, nodeId);
+  }
 }
 
 module.exports = new KnowledgeService();

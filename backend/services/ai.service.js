@@ -50,9 +50,10 @@ Return ONLY valid JSON:
 `;
 
     const runAIGeneration = async () => {
+      let responseText = '';
       try {
         const result = await this.model.generateContent(prompt);
-        const responseText = result.response.text().trim();
+        responseText = result.response.text().trim();
 
         let jsonStr = responseText;
         if (responseText.includes('```json')) {
@@ -75,22 +76,18 @@ Return ONLY valid JSON:
           suggestedCards: Array.isArray(parsed.suggestedCards) ? parsed.suggestedCards : [],
         };
       } catch (error) {
-        console.error('--- AI INQUIRY FAILURE ---');
-        console.error('Error:', error.message);
-        try {
-          const result = await this.model.generateContent(prompt);
-          const responseText = result.response.text();
-          console.error('Raw AI Response Text:', responseText);
-        } catch (innerError) {
-          console.error('Could not retrieve raw response for logging:', innerError.message);
-        }
-        console.error('---------------------------');
-
         if (error.message?.includes('SAFETY')) {
+          console.error('AI Safety Blocked Content');
           throw new AbortError(error);
         }
-        if (error instanceof SyntaxError || error.message === 'Invalid AI response format') {
-          console.error('Failed to parse AI response');
+        
+        console.error('--- AI GENERATION ERROR ---');
+        console.error('Error:', error.message);
+        if (responseText) {
+          console.error('Raw Response (unparsed):', responseText);
+        }
+        
+        if (error instanceof SyntaxError) {
           throw new Error('Invalid AI response format');
         }
         throw error;
@@ -100,11 +97,18 @@ Return ONLY valid JSON:
     return await pRetry(runAIGeneration, {
       retries: 3,
       onFailedAttempt: (error) => {
-        console.log(`AI Inquiry attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left.`);
+        console.warn(`AI Inquiry attempt ${error.attemptNumber} failed. ${error.retriesLeft} retries left. Reason: ${error.message}`);
       },
     }).catch((error) => {
       if (error instanceof AbortError) {
-        throw new Error(`AI Safety Block: ${error.message}`);
+        throw new Error('AI Safety Block: The content was flagged as unsafe.');
+      }
+      const msg = error.message || '';
+      if (msg.includes('503') || msg.includes('demand')) {
+        throw new Error('AI Service is currently overloaded. Please try again in a moment.');
+      }
+      if (msg.includes('429') || msg.includes('quota') || msg.includes('limit')) {
+        throw new Error('Daily AI usage limit reached. Please try again tomorrow.');
       }
       throw new Error('AI Service Temporarily Unavailable. Please try again later.');
     });

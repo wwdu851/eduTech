@@ -8,3 +8,9 @@ export const GET_KNOWLEDGE_GRAPH = gql`
     }
   }
 `;
+
+export const DELETE_KNOWLEDGE_NODE = gql`
+  mutation DeleteKnowledgeNode($nodeId: ID!) {
+    deleteKnowledgeNode(nodeId: $nodeId)
+  }
+`;

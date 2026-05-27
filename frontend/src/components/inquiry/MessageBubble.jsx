@@ -1,8 +1,10 @@
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import SuggestedCardsPanel from './SuggestedCardsPanel';
 
 export default function MessageBubble({ message, messageKey, index }) {
   const isUser = message.role === 'user';
+
+  const isError = message.isError;
 
   if (isUser) {
     return (
@@ -22,22 +24,31 @@ export default function MessageBubble({ message, messageKey, index }) {
       <div className="flex gap-2">
         <div
           className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
-          style={{ background: '#EDE9FE' }}
+          style={{ background: isError ? '#FEE2E2' : '#EDE9FE' }}
         >
-          <Sparkles size={14} style={{ color: 'var(--brand-purple)' }} />
+          {isError ? (
+            <X size={14} className="text-red-600" />
+          ) : (
+            <Sparkles size={14} style={{ color: 'var(--brand-purple)' }} />
+          )}
         </div>
         <div className="max-w-[85%] flex-1">
           <div
-            className="rounded-2xl rounded-bl-sm px-4 py-3 text-sm"
-            style={{ background: 'var(--surface-2)', color: 'var(--text-primary)' }}
+            className={`rounded-2xl rounded-bl-sm px-4 py-3 text-sm ${isError ? 'border border-red-200' : ''}`}
+            style={{ 
+              background: isError ? '#FEF2F2' : 'var(--surface-2)', 
+              color: isError ? '#991B1B' : 'var(--text-primary)' 
+            }}
           >
             <p className="whitespace-pre-wrap">{message.content}</p>
           </div>
-          <SuggestedCardsPanel 
-            suggestions={message.suggestedCards} 
-            messageKey={messageKey} 
-            messageIndex={index}
-          />
+          {!isError && (
+            <SuggestedCardsPanel 
+              suggestions={message.suggestedCards} 
+              messageKey={messageKey} 
+              messageIndex={index} 
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import client from '../apollo/client';
-import { GET_KNOWLEDGE_GRAPH } from '../apollo/operations/knowledge';
+import { GET_KNOWLEDGE_GRAPH, DELETE_KNOWLEDGE_NODE } from '../apollo/operations/knowledge';
 
 export function normalizeGraphNode(n) {
   if (!n) return null;
@@ -31,6 +31,21 @@ export const fetchKnowledgeGraph = createAsyncThunk('knowledge/fetch', async (_,
     return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
   }
 });
+
+export const deleteKnowledgeNode = createAsyncThunk(
+  'knowledge/delete',
+  async (nodeId, { rejectWithValue }) => {
+    try {
+      await client.mutate({
+        mutation: DELETE_KNOWLEDGE_NODE,
+        variables: { nodeId }
+      });
+      return nodeId;
+    } catch (err) {
+      return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
+    }
+  }
+);
 
 const knowledgeSlice = createSlice({
   name: 'knowledge',
@@ -66,6 +81,11 @@ const knowledgeSlice = createSlice({
       .addCase(fetchKnowledgeGraph.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(deleteKnowledgeNode.fulfilled, (state, action) => {
+        const nodeId = action.payload;
+        state.nodes = state.nodes.filter(n => n.id !== nodeId);
+        state.edges = state.edges.filter(e => e.sourceId !== nodeId && e.targetId !== nodeId);
       });
   },
 });

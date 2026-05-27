@@ -73,6 +73,11 @@ module.exports = {
       return await kanbanService.deleteCard(userId, cardId);
     },
 
+    deleteKnowledgeNode: async (_, { nodeId }, { userId }) => {
+      if (!userId) throw new Error('Unauthorized');
+      return await knowledgeService.deleteNode(userId, nodeId);
+    },
+
     moveCard: async (_, { cardId, newColumnId }, { userId }) => {
       if (!userId) throw new Error('Unauthorized');
       return await kanbanService.moveCard(userId, cardId, newColumnId);

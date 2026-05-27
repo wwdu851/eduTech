@@ -94,6 +94,7 @@ type Mutation {
   createCard(input: CreateCardInput!): KanbanCard
   updateCard(cardId: ID!, input: UpdateCardInput!): KanbanCard
   deleteCard(cardId: ID!): Boolean
+  deleteKnowledgeNode(nodeId: ID!): Boolean
   moveCard(cardId: ID!, newColumnId: KanbanColumn!): KanbanCard
   startAIInquiry(cardId: ID!, userQuestion: String): AIInquiryResponse
 }

@@ -87,7 +87,23 @@ const inquirySlice = createSlice({
       })
       .addCase(sendInquiry.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        
+        // Sanitize error message for user display
+        let displayError = action.payload || 'Sorry, I encountered an error. Please try again.';
+        if (displayError.includes('GoogleGenerativeAI') || displayError.includes('Error fetching') || displayError.includes('{')) {
+          displayError = 'AI Service is currently unavailable. Please try again later.';
+        }
+        
+        state.error = displayError;
+        const cardId = action.meta.arg.cardId;
+        if (state.conversations[cardId]) {
+          state.conversations[cardId].push({
+            role: 'ai',
+            isError: true,
+            content: displayError,
+            timestamp: Date.now(),
+          });
+        }
       });
   },
 });
