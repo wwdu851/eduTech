@@ -16,7 +16,6 @@
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
     "@google/generative-ai": "^0.24.1",
-    "@neo4j/graphql": "^7.5.3",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

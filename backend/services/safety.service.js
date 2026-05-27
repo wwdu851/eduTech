@@ -125,7 +125,7 @@ class SafetyService {
     
     const allowedTags = options.allowedTags !== undefined 
       ? options.allowedTags 
-      : ['br', 'p', 'b', 'i', 'strong', 'em'];
+      : [];
 
     const sanitized = sanitizeHtml(input, {
       allowedTags,
