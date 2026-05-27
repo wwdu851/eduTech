@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+:root {
+  --brand-blue: #2563EB;
+  --brand-blue-hover: #1D4ED8;
+  --brand-purple: #7C3AED;
+  --brand-green: #059669;
+  --surface-0: #FFFFFF;
+  --surface-1: #F8FAFC;
+  --surface-2: #F1F5F9;
+  --border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--surface-1);
+  color: var(--text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Category tag colors */
+.tag-HISTORY      { background: #FEF3C7; color: #92400E; }
+.tag-ARCHITECTURE { background: #EDE9FE; color: #5B21B6; }
+.tag-TRADE        { background: #FEE2E2; color: #991B1B; }
+.tag-CULTURE      { background: #FCE7F3; color: #9D174D; }
+.tag-FOOD         { background: #D1FAE5; color: #065F46; }
+.tag-POLITICS     { background: #DBEAFE; color: #1E40AF; }
+.tag-LOGISTICS    { background: #E0F2FE; color: #075985; }
+.tag-PLANNING     { background: #E0E7FF; color: #3730A3; }
+.tag-SCIENCE      { background: #F0FDF4; color: #14532D; }
+.tag-ENGINEERING  { background: #FFF7ED; color: #9A3412; }
+.tag-GEOGRAPHY    { background: #F0F9FF; color: #0C4A6E; }
+.tag-ECONOMICS    { background: #FDF4FF; color: #701A75; }
+.tag-default      { background: #F1F5F9; color: #475569; }
