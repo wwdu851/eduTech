@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Plus } from 'lucide-react';
@@ -44,18 +44,20 @@ export default function AddCardBar() {
   };
 
   const cards = useSelector(state => state.board.cards);
-  const cardList = Object.values(cards);
+  const cardList = useMemo(() => Object.values(cards), [cards]);
+  const aiTargetCardId = useMemo(() => {
+    if (lastCardId && cards[lastCardId]) return lastCardId;
+    if (cardList.length === 0) return null;
+
+    const newestCard = [...cardList].sort((a, b) =>
+      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    )[0];
+    return newestCard?.id || null;
+  }, [cardList, cards, lastCardId]);
 
   const openAiForLast = () => {
-    if (lastCardId) {
-      navigate(`/inquiry/${lastCardId}`);
-    } else if (cardList.length > 0) {
-      // If no card was just added, open AI for the most recent card
-      const sorted = [...cardList].sort((a, b) => 
-        new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      );
-      navigate(`/inquiry/${sorted[0].id}`);
-    }
+    if (!aiTargetCardId) return;
+    navigate(`/inquiry/${aiTargetCardId}`);
   };
 
   return (
@@ -93,7 +95,7 @@ export default function AddCardBar() {
       <button
         type="button"
         onClick={openAiForLast}
-        disabled={cardList.length === 0 || adding || loading}
+        disabled={!aiTargetCardId || adding || loading}
         className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40"
         style={{ background: 'var(--brand-purple)' }}
         title="Open AI inquiry and knowledge graph"
