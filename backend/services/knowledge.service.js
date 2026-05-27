@@ -45,6 +45,8 @@ class KnowledgeService {
               label,
               category,
               description,
+              isAIGenerated: true,
+              verificationStatus: 'UNVERIFIED',
               userId
             }, tx);
 
@@ -52,7 +54,9 @@ class KnowledgeService {
               id: String(node.id),
               label: String(node.label),
               category: String(node.category),
-              description: String(node.description)
+              description: String(node.description),
+              isAIGenerated: Boolean(node.isAIGenerated),
+              verificationStatus: String(node.verificationStatus || 'UNVERIFIED')
             };
             createdNodes.push(normalized);
             labelToNode.set(label.toLowerCase(), normalized);
@@ -109,7 +113,9 @@ class KnowledgeService {
         id: String(n.id),
         label: String(n.label || ''),
         category: n.category ? String(n.category) : null,
-        description: String(n.description || '')
+        description: String(n.description || ''),
+        isAIGenerated: Boolean(n.isAIGenerated),
+        verificationStatus: String(n.verificationStatus || (n.isAIGenerated ? 'UNVERIFIED' : 'VERIFIED'))
       })),
       edges: (graph.edges || []).map(e => ({
         sourceId: String(e.sourceId),

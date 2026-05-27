@@ -5,7 +5,7 @@ export const START_AI_INQUIRY = gql`
     startAIInquiry(cardId: $cardId, userQuestion: $userQuestion) {
       inquiryId
       answer
-      extractedNodes { id label category description }
+      extractedNodes { id label category description isAIGenerated verificationStatus }
       extractedEdges { sourceId targetId relationType }
       suggestedCards { title content columnId rationale }
     }

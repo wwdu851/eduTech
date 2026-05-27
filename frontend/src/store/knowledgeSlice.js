@@ -9,6 +9,8 @@ export function normalizeGraphNode(n) {
     label: String(n.label || ''),
     category: n.category ? String(n.category) : null,
     description: String(n.description || ''),
+    isAIGenerated: Boolean(n.isAIGenerated),
+    verificationStatus: String(n.verificationStatus || (n.isAIGenerated ? 'UNVERIFIED' : 'VERIFIED')),
   };
 }
 

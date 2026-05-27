@@ -3,7 +3,7 @@ import { gql } from '@apollo/client/core';
 export const GET_KNOWLEDGE_GRAPH = gql`
   query GetKnowledgeGraph {
     getKnowledgeGraph {
-      nodes { id label category description }
+      nodes { id label category description isAIGenerated verificationStatus }
       edges { sourceId targetId relationType }
     }
   }

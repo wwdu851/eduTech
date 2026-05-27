@@ -4,6 +4,12 @@ class KnowledgeRepository {
   async createNode(nodeData, tx = null) {
     const session = tx ? null : driver.session();
     const runner = tx || session;
+    const params = {
+      ...nodeData,
+      isAIGenerated: Boolean(nodeData.isAIGenerated),
+      verificationStatus: nodeData.verificationStatus || (nodeData.isAIGenerated ? 'UNVERIFIED' : 'VERIFIED')
+    };
+
     try {
       const result = await runner.run(`
         MATCH (u:User {id: $userId})
@@ -12,10 +18,12 @@ class KnowledgeRepository {
           label: $label,
           category: $category,
           description: $description,
+          isAIGenerated: $isAIGenerated,
+          verificationStatus: $verificationStatus,
           createdAt: datetime()
         })
         RETURN k
-      `, nodeData);
+      `, params);
 
       return result.records[0].get('k').properties;
     } finally {

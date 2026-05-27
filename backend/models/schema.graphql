@@ -51,6 +51,8 @@ type KnowledgeNode {
   label: String
   category: KnowledgeCategory
   description: String
+  isAIGenerated: Boolean
+  verificationStatus: String
 }
 
 type Relationship {

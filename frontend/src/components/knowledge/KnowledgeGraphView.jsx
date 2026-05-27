@@ -64,6 +64,12 @@ export default function KnowledgeGraphView() {
     ctx.fillStyle = color;
     ctx.fill();
 
+    if (node.isAIGenerated) {
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 1.5 / globalScale;
+      ctx.stroke();
+    }
+
     if (isHovered) {
       ctx.strokeStyle = '#2563EB';
       ctx.lineWidth = 2 / globalScale;
@@ -132,6 +138,10 @@ export default function KnowledgeGraphView() {
                     <span className="font-medium text-slate-700">{cat}</span>
                   </div>
                 ))}
+              </div>
+              <div className="mt-2 flex items-center gap-1.5 border-t pt-2 text-slate-600" style={{ borderColor: 'var(--border)' }}>
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-amber-600" />
+                <span className="font-medium">AI generated, verify first</span>
               </div>
             </div>
           </div>

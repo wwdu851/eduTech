@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser, clearError } from '../store/authSlice';
+import { loginUser } from '../store/authSlice';
 import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -13,15 +12,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { loading, error } = useSelector(state => state.auth);
 
-  const switchMode = () => {
-    setMode(m => m === 'login' ? 'register' : 'login');
-    dispatch(clearError());
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const action = mode === 'login' ? loginUser : registerUser;
-    const result = await dispatch(action({ email, password }));
+    const result = await dispatch(loginUser({ email, password }));
     if (result.meta.requestStatus === 'fulfilled') {
       navigate('/board');
     }
@@ -130,9 +123,6 @@ export default function LoginPage() {
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {mode === 'register' && (
-                <p className="text-xs text-slate-400 mt-1">Minimum 8 characters</p>
-              )}
             </div>
 
             {error && (
@@ -148,8 +138,8 @@ export default function LoginPage() {
               style={{ background: loading ? '#93C5FD' : 'var(--brand-blue)' }}
             >
               {loading
-                ? <><Loader2 size={16} className="animate-spin" />{mode === 'login' ? 'Signing in…' : 'Creating account…'}</>
-                : <>{mode === 'login' ? 'Sign in' : 'Create account'}<ArrowRight size={16} /></>
+                ? <><Loader2 size={16} className="animate-spin" />Signing in…</>
+                : <>Sign in<ArrowRight size={16} /></>
               }
             </button>
           </form>

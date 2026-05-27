@@ -23,8 +23,6 @@ export default function SuggestedCardsPanel({ suggestions, messageKey, messageIn
   const makeIdempotencyKey = () =>
     (crypto?.randomUUID?.() || `idem-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
-  if (!suggestions?.length) return null;
-
   // Compute visible suggestions based on Redux status
   const grouped = useMemo(() => {
     const acc = columns.reduce((acc, col) => {
@@ -32,13 +30,15 @@ export default function SuggestedCardsPanel({ suggestions, messageKey, messageIn
       return acc;
     }, {});
     
-    suggestions.forEach((s, i) => {
+    (suggestions || []).forEach((s, i) => {
       if (s.status !== 'dismissed' && acc[s.columnId]) {
         acc[s.columnId].push({ ...s, index: i });
       }
     });
     return acc;
   }, [suggestions, columns]);
+
+  if (!suggestions?.length) return null;
 
   const hasVisible = suggestions.some(s => s.status !== 'dismissed');
   if (!hasVisible) return null;

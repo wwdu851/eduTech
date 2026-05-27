@@ -1,5 +1,5 @@
 import { useDispatch } from 'react-redux';
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { deleteKnowledgeNode } from '../../store/knowledgeSlice';
 
 export default function NodeDetailPanel({ node, onClose }) {
@@ -21,17 +21,31 @@ export default function NodeDetailPanel({ node, onClose }) {
         type="button"
         onClick={onClose}
         className="absolute right-3 top-3 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+        aria-label="Close node details"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <X size={14} />
       </button>
       <div className="mb-3">
         <h3 className="pr-8 font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{node.label}</h3>
-        {node.category && (
-          <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tagClass}`}>
-            {node.category}
-          </span>
-        )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {node.category && (
+            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tagClass}`}>
+              {node.category}
+            </span>
+          )}
+          {node.isAIGenerated && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              <AlertTriangle size={11} />
+              AI generated
+            </span>
+          )}
+        </div>
       </div>
+      {node.isAIGenerated && (
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
+          Verify this AI-extracted point before treating it as a fact.
+        </div>
+      )}
       {node.description && (
         <div className="max-h-48 overflow-y-auto pr-1 custom-scrollbar">
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
