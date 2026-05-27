@@ -103,13 +103,67 @@ class KanbanRepository {
     }
   }
 
+  async updateCard(userId, cardId, input) {
+    const session = driver.session();
+    try {
+      const sets = [];
+      const params = { userId, cardId };
+
+      if (input.title !== undefined) {
+        sets.push('c.title = $title');
+        params.title = safetyService.sanitizeInput(input.title);
+      }
+      if (input.content !== undefined) {
+        sets.push('c.content = $content');
+        params.content = safetyService.sanitizeInput(input.content);
+      }
+      if (input.columnId !== undefined) {
+        sets.push('c.columnId = $columnId');
+        params.columnId = input.columnId;
+      }
+
+      if (sets.length === 0) {
+        return await this.getCard(userId, cardId);
+      }
+
+      const result = await session.run(`
+        MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
+        SET ${sets.join(', ')}
+        RETURN c
+      `, params);
+
+      if (result.records.length === 0) throw new Error('Card not found or access denied');
+
+      const card = result.records[0].get('c').properties;
+      return { ...card, tags: card.tags || [] };
+    } finally {
+      await session.close();
+    }
+  }
+
+  async deleteCard(userId, cardId) {
+    const session = driver.session();
+    try {
+      const result = await session.run(`
+        MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
+        DETACH DELETE c
+        RETURN count(c) as deleted
+      `, { userId, cardId });
+
+      const deleted = result.records[0]?.get('deleted')?.toNumber?.() ?? result.records[0]?.get('deleted') ?? 0;
+      return deleted > 0;
+    } finally {
+      await session.close();
+    }
+  }
+
   async linkKnowledgeToCard(userId, cardId, knowledgeNodeIds) {
     const session = driver.session();
     try {
       for (const nodeId of knowledgeNodeIds) {
         await session.run(`
           MATCH (u:User {id: $userId})-[:CREATED]->(c:KanbanCard {id: $cardId})
-          MATCH (k:KnowledgeNode {id: $nodeId})
+          MATCH (u)-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode {id: $nodeId})
           MERGE (c)-[:CONTAINS]->(k)
         `, { userId, cardId, nodeId });
       }

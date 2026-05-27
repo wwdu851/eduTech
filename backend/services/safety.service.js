@@ -8,10 +8,29 @@ class SafetyService {
     ];
 
     // Zod Schemas
+    this.columnIdEnum = z.enum([
+      'IDEATION_DISCOVERY', 'RESEARCH_INQUIRY', 'SYNTHESIS_KNOWLEDGE', 'TRIP_PLANNING_LOGISTICS'
+    ]);
+
     this.createCardSchema = z.object({
       title: z.string().min(3).max(100),
       content: z.string().max(5000).optional(),
-      columnId: z.enum(['IDEATION_DISCOVERY', 'RESEARCH_INQUIRY', 'SYNTHESIS_KNOWLEDGE', 'TRIP_PLANNING_LOGISTICS']).optional()
+      columnId: this.columnIdEnum.optional()
+    });
+
+    this.updateCardSchema = z.object({
+      title: z.string().min(3).max(100).optional(),
+      content: z.string().max(5000).optional(),
+      columnId: this.columnIdEnum.optional()
+    }).refine(data => data.title !== undefined || data.content !== undefined || data.columnId !== undefined, {
+      message: 'At least one field must be provided to update a card'
+    });
+
+    this.suggestedCardSchema = z.object({
+      title: z.string().min(3).max(100),
+      content: z.string().max(5000).optional(),
+      columnId: this.columnIdEnum,
+      rationale: z.string().max(500).optional()
     });
 
     this.registerSchema = z.object({
@@ -55,6 +74,45 @@ class SafetyService {
     this.moderateContent(input.title);
     this.moderateContent(input.content);
     return true;
+  }
+
+  validateUpdateCardInput(input) {
+    this.updateCardSchema.parse(input);
+    if (input.title !== undefined) this.moderateContent(input.title);
+    if (input.content !== undefined) this.moderateContent(input.content);
+    return true;
+  }
+
+  sanitizeSuggestedCards(suggestedCards = []) {
+    const MAX = 10;
+    const valid = [];
+
+    for (const raw of suggestedCards.slice(0, MAX)) {
+      try {
+        const parsed = this.suggestedCardSchema.parse({
+          title: raw.title,
+          content: raw.content || '',
+          columnId: raw.columnId,
+          rationale: raw.rationale || ''
+        });
+        const title = this.sanitizeInput(parsed.title);
+        const content = this.sanitizeInput(parsed.content || '');
+        const rationale = this.sanitizeInput(parsed.rationale || '');
+        this.moderateContent(title);
+        this.moderateContent(content);
+        this.moderateContent(rationale);
+        valid.push({
+          title,
+          content,
+          columnId: parsed.columnId,
+          rationale: rationale || null
+        });
+      } catch {
+        // Drop invalid suggestions rather than failing the inquiry
+      }
+    }
+
+    return valid;
   }
 
   sanitizeInput(input) {

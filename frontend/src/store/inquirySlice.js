@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import client from '../apollo/client';
 import { START_AI_INQUIRY } from '../apollo/operations/inquiry';
+import { fetchKnowledgeGraph } from './knowledgeSlice';
 
 // Multi-turn: build prompt context from history
 const buildContextualQuestion = (history, newQuestion) => {
@@ -26,7 +27,9 @@ export const sendInquiry = createAsyncThunk(
         mutation: START_AI_INQUIRY,
         variables: { cardId, userQuestion: contextualQuestion },
       });
-      return { cardId, result: data.startAIInquiry };
+      const result = data.startAIInquiry;
+      dispatch(fetchKnowledgeGraph());
+      return { cardId, result };
     } catch (err) {
       return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
     }
@@ -69,8 +72,7 @@ const inquirySlice = createSlice({
           role: 'ai',
           content: result.answer,
           timestamp: Date.now(),
-          extractedNodes: result.extractedNodes,
-          extractedEdges: result.extractedEdges,
+          suggestedCards: result.suggestedCards || [],
         });
       })
       .addCase(sendInquiry.rejected, (state, action) => {

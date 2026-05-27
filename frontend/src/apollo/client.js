@@ -1,7 +1,19 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client/core';
+import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { getAuthToken } from '../utils/auth';
 
 const uri = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
+
+const authLink = setContext((_, { headers }) => {
+  const token = getAuthToken();
+  return {
+    headers: {
+      ...headers,
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+  };
+});
 
 const httpLink = createHttpLink({
   uri,
@@ -20,7 +32,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 const client = new ApolloClient({
-  link: from([errorLink, httpLink]),
+  link: from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {

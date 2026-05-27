@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import client from '../apollo/client';
-import { GET_BOARD, CREATE_CARD, MOVE_CARD } from '../apollo/operations/board';
+import { GET_BOARD, CREATE_CARD, MOVE_CARD, UPDATE_CARD, DELETE_CARD } from '../apollo/operations/board';
 
 export const fetchBoard = createAsyncThunk('board/fetch', async ({ limit = 50, offset = 0 } = {}, { rejectWithValue }) => {
   try {
@@ -15,6 +15,25 @@ export const createCard = createAsyncThunk('board/createCard', async (input, { r
   try {
     const { data } = await client.mutate({ mutation: CREATE_CARD, variables: { input } });
     return data.createCard;
+  } catch (err) {
+    return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
+  }
+});
+
+export const updateCard = createAsyncThunk('board/updateCard', async ({ cardId, input }, { rejectWithValue }) => {
+  try {
+    const { data } = await client.mutate({ mutation: UPDATE_CARD, variables: { cardId, input } });
+    return data.updateCard;
+  } catch (err) {
+    return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
+  }
+});
+
+export const deleteCard = createAsyncThunk('board/deleteCard', async (cardId, { rejectWithValue }) => {
+  try {
+    const { data } = await client.mutate({ mutation: DELETE_CARD, variables: { cardId } });
+    if (!data.deleteCard) return rejectWithValue('Failed to delete card');
+    return cardId;
   } catch (err) {
     return rejectWithValue(err.graphQLErrors?.[0]?.message || err.message);
   }
@@ -65,6 +84,13 @@ const boardSlice = createSlice({
       .addCase(createCard.fulfilled, (state, action) => {
         const card = action.payload;
         state.cards[card.id] = card;
+      })
+      .addCase(updateCard.fulfilled, (state, action) => {
+        const card = action.payload;
+        state.cards[card.id] = { ...state.cards[card.id], ...card };
+      })
+      .addCase(deleteCard.fulfilled, (state, action) => {
+        delete state.cards[action.payload];
       })
       .addCase(moveCard.fulfilled, (state, action) => {
         const { id, columnId } = action.payload;

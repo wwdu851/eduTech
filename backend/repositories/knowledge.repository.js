@@ -48,27 +48,29 @@ class KnowledgeRepository {
     const session = tx ? null : driver.session();
     const runner = tx || session;
     try {
-      const result = await runner.run(`
-        MATCH (u:User {id: $userId})
-        OPTIONAL MATCH (u)-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode)
-        OPTIONAL MATCH (k)-[r:RELATES_TO]->(k2:KnowledgeNode)
-        WHERE (u)-[:OWNS_KNOWLEDGE]->(k2)
-        RETURN collect(DISTINCT k) as nodes, 
-               collect(DISTINCT {
-                 sourceId: k.id, 
-                 targetId: k2.id, 
-                 relationType: r.type
-               }) as edges
+      const nodesResult = await runner.run(`
+        MATCH (u:User {id: $userId})-[:OWNS_KNOWLEDGE]->(k:KnowledgeNode)
+        RETURN collect(DISTINCT k) AS nodes
       `, { userId });
 
-      if (result.records.length === 0) {
-        return { nodes: [], edges: [] };
-      }
+      const edgesResult = await runner.run(`
+        MATCH (u:User {id: $userId})-[:OWNS_KNOWLEDGE]->(a:KnowledgeNode)-[r:RELATES_TO]->(b:KnowledgeNode)
+        WHERE (u)-[:OWNS_KNOWLEDGE]->(b)
+        RETURN collect(DISTINCT {
+          sourceId: a.id,
+          targetId: b.id,
+          relationType: r.type
+        }) AS edges
+      `, { userId });
 
-      const record = result.records[0];
+      const nodeRecords = nodesResult.records[0];
+      const edgeRecords = edgesResult.records[0];
+      const rawNodes = nodeRecords ? nodeRecords.get('nodes') : [];
+      const rawEdges = edgeRecords ? edgeRecords.get('edges') : [];
+
       return {
-        nodes: record.get('nodes').map(n => n.properties).filter(Boolean),
-        edges: record.get('edges').filter(e => e.sourceId && e.targetId)
+        nodes: rawNodes.map(n => n?.properties).filter(n => n?.id),
+        edges: rawEdges.filter(e => e?.sourceId && e?.targetId),
       };
     } finally {
       if (session) await session.close();

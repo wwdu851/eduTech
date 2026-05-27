@@ -44,3 +44,48 @@ body {
 .tag-GEOGRAPHY    { background: #F0F9FF; color: #0C4A6E; }
 .tag-ECONOMICS    { background: #FDF4FF; color: #701A75; }
 .tag-default      { background: #F1F5F9; color: #475569; }
+
+/* Kanban */
+.kanban-scroll {
+  scrollbar-width: thin;
+}
+
+/* Chat */
+.chat-messages {
+  scroll-behavior: smooth;
+}
+
+/* Knowledge graph */
+.graph-container {
+  background-color: var(--surface-1);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.graph-container canvas {
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Explorer layout */
+.explorer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .explorer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

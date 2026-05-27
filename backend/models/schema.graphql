@@ -92,6 +92,8 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload
   login(input: LoginInput!): AuthPayload
   createCard(input: CreateCardInput!): KanbanCard
+  updateCard(cardId: ID!, input: UpdateCardInput!): KanbanCard
+  deleteCard(cardId: ID!): Boolean
   moveCard(cardId: ID!, newColumnId: KanbanColumn!): KanbanCard
   startAIInquiry(cardId: ID!, userQuestion: String): AIInquiryResponse
 }
@@ -102,9 +104,23 @@ input CreateCardInput {
   columnId: KanbanColumn
 }
 
+input UpdateCardInput {
+  title: String
+  content: String
+  columnId: KanbanColumn
+}
+
+type SuggestedCard {
+  title: String!
+  content: String
+  columnId: KanbanColumn!
+  rationale: String
+}
+
 type AIInquiryResponse {
   inquiryId: ID!
   answer: String!
   extractedNodes: [KnowledgeNode]
   extractedEdges: [Relationship]
+  suggestedCards: [SuggestedCard]
 }

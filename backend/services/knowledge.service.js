@@ -2,55 +2,93 @@ const knowledgeRepo = require('../repositories/knowledge.repository');
 const { v4: uuidv4 } = require('uuid');
 const driver = require('../config/neo4j');
 
+const VALID_CATEGORIES = new Set([
+  'HISTORY', 'ARCHITECTURE', 'TRADE', 'CULTURE', 'FOOD', 'POLITICS',
+  'LOGISTICS', 'PLANNING', 'SCIENCE', 'ENGINEERING', 'GEOGRAPHY', 'ECONOMICS'
+]);
+
+function normalizeCategory(category) {
+  const upper = String(category || '').toUpperCase().trim();
+  if (VALID_CATEGORIES.has(upper)) return upper;
+  return 'CULTURE';
+}
+
+function normalizeLabel(label) {
+  return String(label || '').trim();
+}
+
 class KnowledgeService {
   async buildKnowledgeGraph(userId, knowledgeData) {
     const { knowledgePoints = [], relationships = [] } = knowledgeData;
-    const validCategories = new Set([
-      'HISTORY','ARCHITECTURE','TRADE','CULTURE','FOOD','POLITICS',
-      'LOGISTICS','PLANNING','SCIENCE','ENGINEERING','GEOGRAPHY','ECONOMICS'
-    ]);
-
     const session = driver.session();
-    
-    try {
-      return await session.executeWrite(async tx => {
-        // 1. Create knowledge nodes
-        const createdNodes = [];
-        for (const point of knowledgePoints) {
-          const category = String(point.category || '').toUpperCase();
-          if (!validCategories.has(category)) {
-            throw new Error(`Invalid knowledge category: ${point.category}`);
-          }
-          if (!point.label || !point.description) {
-            throw new Error('Knowledge point must include label and description');
-          }
 
-          const nodeId = uuidv4();
-          const node = await knowledgeRepo.createNode({
-            id: nodeId,
-            label: point.label,
-            category,
-            description: point.description,
-            userId
-          }, tx);
-          createdNodes.push(node);
+    try {
+      return await session.executeWrite(async (tx) => {
+        const createdNodes = [];
+        const labelToNode = new Map();
+
+        for (const point of knowledgePoints) {
+          try {
+            const label = normalizeLabel(point.label);
+            if (!label) continue;
+
+            const category = normalizeCategory(point.category);
+            const description = String(point.description || point.label || label).trim();
+            if (!description) continue;
+
+            const nodeId = uuidv4();
+            const node = await knowledgeRepo.createNode({
+              id: nodeId,
+              label,
+              category,
+              description,
+              userId
+            }, tx);
+
+            const normalized = {
+              id: String(node.id),
+              label: String(node.label),
+              category: String(node.category),
+              description: String(node.description)
+            };
+            createdNodes.push(normalized);
+            labelToNode.set(label.toLowerCase(), normalized);
+          } catch (err) {
+            console.warn('Skipped invalid knowledge point:', err.message);
+          }
         }
 
-        // 2. Create relationships between knowledge nodes
         const createdEdges = [];
         for (const rel of relationships) {
-          const sourceNode = createdNodes.find(n => n.label === rel.source);
-          const targetNode = createdNodes.find(n => n.label === rel.target);
-          
-          if (sourceNode && targetNode) {
-            const edge = await knowledgeRepo.createRelationship(
-              sourceNode.id,
-              targetNode.id,
-              rel.type,
-              userId,
-              tx
-            );
-            createdEdges.push(edge);
+          try {
+            const sourceLabel = normalizeLabel(rel.source);
+            const targetLabel = normalizeLabel(rel.target);
+            let sourceNode = labelToNode.get(sourceLabel.toLowerCase());
+            let targetNode = labelToNode.get(targetLabel.toLowerCase());
+
+            if (!sourceNode || !targetNode) {
+              const sourceIdx = parseInt(rel.source, 10);
+              const targetIdx = parseInt(rel.target, 10);
+              if (!Number.isNaN(sourceIdx) && createdNodes[sourceIdx]) {
+                sourceNode = createdNodes[sourceIdx];
+              }
+              if (!Number.isNaN(targetIdx) && createdNodes[targetIdx]) {
+                targetNode = createdNodes[targetIdx];
+              }
+            }
+
+            if (sourceNode && targetNode) {
+              const edge = await knowledgeRepo.createRelationship(
+                sourceNode.id,
+                targetNode.id,
+                rel.type || 'relates_to',
+                userId,
+                tx
+              );
+              createdEdges.push(edge);
+            }
+          } catch (err) {
+            console.warn('Skipped invalid relationship:', err.message);
           }
         }
 
@@ -62,7 +100,20 @@ class KnowledgeService {
   }
 
   async getUserKnowledgeGraph(userId) {
-    return await knowledgeRepo.getGraphByUser(userId);
+    const graph = await knowledgeRepo.getGraphByUser(userId);
+    return {
+      nodes: (graph.nodes || []).map(n => ({
+        id: String(n.id),
+        label: String(n.label || ''),
+        category: n.category ? String(n.category) : null,
+        description: String(n.description || '')
+      })),
+      edges: (graph.edges || []).map(e => ({
+        sourceId: String(e.sourceId),
+        targetId: String(e.targetId),
+        relationType: String(e.relationType || '')
+      }))
+    };
   }
 }
 

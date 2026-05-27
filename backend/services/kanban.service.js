@@ -13,6 +13,14 @@ class KanbanService {
     return await kanbanRepo.getCard(userId, cardId);
   }
 
+  async updateCard(userId, cardId, input) {
+    return await kanbanRepo.updateCard(userId, cardId, input);
+  }
+
+  async deleteCard(userId, cardId) {
+    return await kanbanRepo.deleteCard(userId, cardId);
+  }
+
   async moveCard(userId, cardId, newColumnId) {
     return await kanbanRepo.moveCard(userId, cardId, newColumnId);
   }

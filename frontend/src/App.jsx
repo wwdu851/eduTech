@@ -12,6 +12,7 @@ export default function App() {
       <Route path="/login" element={token ? <Navigate to="/board" replace /> : <LoginPage />} />
       <Route path="/board" element={<ProtectedRoute><BoardPage /></ProtectedRoute>} />
       <Route path="/inquiry/:cardId" element={<ProtectedRoute><InquiryPage /></ProtectedRoute>} />
+      <Route path="/explorer/:cardId" element={<ProtectedRoute><InquiryPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to={token ? "/board" : "/login"} replace />} />
     </Routes>
   );

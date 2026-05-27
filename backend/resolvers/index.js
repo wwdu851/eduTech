@@ -63,9 +63,23 @@ module.exports = {
       return await kanbanService.createCard(userId, input);
     },
 
+    updateCard: async (_, { cardId, input }, { userId }) => {
+      if (!userId) throw new Error('Unauthorized');
+      safetyService.validateUpdateCardInput(input);
+      const sanitized = {};
+      if (input.title !== undefined) sanitized.title = safetyService.sanitizeInput(input.title);
+      if (input.content !== undefined) sanitized.content = safetyService.sanitizeInput(input.content);
+      if (input.columnId !== undefined) sanitized.columnId = input.columnId;
+      return await kanbanService.updateCard(userId, cardId, sanitized);
+    },
+
+    deleteCard: async (_, { cardId }, { userId }) => {
+      if (!userId) throw new Error('Unauthorized');
+      return await kanbanService.deleteCard(userId, cardId);
+    },
+
     moveCard: async (_, { cardId, newColumnId }, { userId }) => {
       if (!userId) throw new Error('Unauthorized');
-      // IDOR protection should be handled in the repository/service
       return await kanbanService.moveCard(userId, cardId, newColumnId);
     },
 
@@ -89,12 +103,14 @@ module.exports = {
       // 5. Link extracted knowledge nodes to the card
       await kanbanService.linkKnowledgeToCard(userId, cardId, graphData.nodes.map(n => n.id));
 
-      // 6. Return AI answer and extracted graph data
+      const suggestedCards = safetyService.sanitizeSuggestedCards(aiResponse.suggestedCards);
+
       return {
         inquiryId: `inquiry-${Date.now()}`,
-        answer: aiResponse.answer,
+        answer: safetyService.sanitizeInput(aiResponse.answer || ''),
         extractedNodes: graphData.nodes,
-        extractedEdges: graphData.edges
+        extractedEdges: graphData.edges,
+        suggestedCards,
       };
     }
   }

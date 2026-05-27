@@ -27,6 +27,21 @@ export const CREATE_CARD = gql`
   }
 `;
 
+export const UPDATE_CARD = gql`
+  mutation UpdateCard($cardId: ID!, $input: UpdateCardInput!) {
+    updateCard(cardId: $cardId, input: $input) {
+      id title content columnId tags
+      knowledgePoints { id label category description }
+    }
+  }
+`;
+
+export const DELETE_CARD = gql`
+  mutation DeleteCard($cardId: ID!) {
+    deleteCard(cardId: $cardId)
+  }
+`;
+
 export const MOVE_CARD = gql`
   mutation MoveCard($cardId: ID!, $newColumnId: KanbanColumn!) {
     moveCard(cardId: $cardId, newColumnId: $newColumnId) {
