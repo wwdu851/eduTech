@@ -25,20 +25,8 @@ module.exports = {
   },
 
   Mutation: {
-    register: async (_, { input }, { res }) => {
-      safetyService.validateRegisterInput(input);
-      const { token, user } = await authService.register(input.email, input.password);
-
-      if (res) {
-        res.cookie('token', token, {
-          httpOnly: true,
-          secure: env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
-      }
-
-      return { token, user };
+    register: async () => {
+      throw new Error('Registration is currently disabled. Please contact the administrator.');
     },
 
     login: async (_, { input }, { res }) => {
