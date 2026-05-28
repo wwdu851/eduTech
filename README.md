@@ -1,6 +1,8 @@
 # EduTech Experiential Learning Planner
 
-EduTech is a 3-day IT developer assessment project for student experiential learning trip planning. It combines a Kanban planning board, an AI inquiry companion, and a Neo4j knowledge graph so students can move from trip ideas to research questions, synthesized knowledge, and logistics planning.
+EduTech is a full stack application for student experiential learning trip planning. It combines a Kanban planning board, an AI inquiry companion, and a Neo4j knowledge graph so students can move from trip ideas to research questions, synthesized knowledge, and logistics planning.
+
+**Live Demo:** [https://edutech-ten-xi.vercel.app](https://edutech-ten-xi.vercel.app)
 
 ## Assessment Requirements Coverage
 
