@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Plus } from 'lucide-react';
 import { createCard, selectColumns } from '../../store/boardSlice';
 import ErrorBanner from '../shared/ErrorBanner';
+import { getAiTargetCardId } from '../../utils/addCardBar';
 
 export default function AddCardBar() {
   const dispatch = useDispatch();
@@ -44,16 +45,7 @@ export default function AddCardBar() {
   };
 
   const cards = useSelector(state => state.board.cards);
-  const cardList = useMemo(() => Object.values(cards), [cards]);
-  const aiTargetCardId = useMemo(() => {
-    if (lastCardId && cards[lastCardId]) return lastCardId;
-    if (cardList.length === 0) return null;
-
-    const newestCard = [...cardList].sort((a, b) =>
-      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    )[0];
-    return newestCard?.id || null;
-  }, [cardList, cards, lastCardId]);
+  const aiTargetCardId = useMemo(() => getAiTargetCardId({ cards, lastCardId }), [cards, lastCardId]);
 
   const openAiForLast = () => {
     if (!aiTargetCardId) return;

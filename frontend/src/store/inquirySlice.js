@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import client from '../apollo/client';
 import { START_AI_INQUIRY } from '../apollo/operations/inquiry';
 import { fetchKnowledgeGraph } from './knowledgeSlice';
+import { addConversationMessage, ensureConversation, getConversationByCardId } from '../utils/inquiryState';
 
 // Multi-turn: build prompt context from history
 const buildContextualQuestion = (history, newQuestion) => {
@@ -48,14 +49,11 @@ const inquirySlice = createSlice({
     setActiveCard(state, action) {
       state.activeCardId = action.payload;
       state.error = null;
-      if (!state.conversations[action.payload]) {
-        state.conversations[action.payload] = [];
-      }
+      ensureConversation(state.conversations, action.payload);
     },
     addMessage(state, action) {
       const { cardId, message } = action.payload;
-      if (!state.conversations[cardId]) state.conversations[cardId] = [];
-      state.conversations[cardId].push(message);
+      addConversationMessage(state.conversations, cardId, message);
     },
     updateSuggestedCardStatus(state, action) {
       const { cardId, messageIndex, suggestionIndex, status } = action.payload;
@@ -77,8 +75,7 @@ const inquirySlice = createSlice({
       .addCase(sendInquiry.fulfilled, (state, action) => {
         state.loading = false;
         const { cardId, result } = action.payload;
-        if (!state.conversations[cardId]) state.conversations[cardId] = [];
-        state.conversations[cardId].push({
+        addConversationMessage(state.conversations, cardId, {
           role: 'ai',
           content: result.answer,
           timestamp: Date.now(),
@@ -109,5 +106,5 @@ const inquirySlice = createSlice({
 });
 
 export const { setActiveCard, addMessage, updateSuggestedCardStatus, clearConversation } = inquirySlice.actions;
-export const selectConversation = (cardId) => (state) => state.inquiry.conversations[cardId] || [];
+export const selectConversation = (cardId) => (state) => getConversationByCardId(state.inquiry.conversations, cardId);
 export default inquirySlice.reducer;

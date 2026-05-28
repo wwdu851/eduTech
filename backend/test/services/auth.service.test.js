@@ -1,6 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const TEST_JWT_SECRET = 'unit-test-secret-with-enough-length';
 
 function loadAuthService(userRepository) {
   const authPath = require.resolve('../../services/auth.service');
@@ -18,7 +21,7 @@ function loadAuthService(userRepository) {
     id: envPath,
     filename: envPath,
     loaded: true,
-    exports: { JWT_SECRET: 'unit-test-secret-with-enough-length' },
+    exports: { JWT_SECRET: TEST_JWT_SECRET },
   };
 
   return require('../../services/auth.service');
@@ -43,6 +46,23 @@ test('register creates a user with a hashed password and returns a usable token'
   assert.equal(authService.verifyToken(result.token), 'user-1');
   assert.notEqual(createdUser.password, 'StrongPass123!');
   assert.equal(await bcrypt.compare('StrongPass123!', createdUser.password), true);
+});
+
+test('register hashes passwords with 10 salt rounds', async (t) => {
+  const hashMock = t.mock.method(bcrypt, 'hash', async () => 'hashed-password');
+  const authService = loadAuthService({
+    async findByEmail() {
+      return null;
+    },
+    async createUser(email, hashedPassword) {
+      return { id: 'user-1', email, password: hashedPassword };
+    },
+  });
+
+  await authService.register('student@example.com', 'StrongPass123!');
+
+  assert.equal(hashMock.mock.callCount(), 1);
+  assert.deepEqual(hashMock.mock.calls[0].arguments, ['StrongPass123!', 10]);
 });
 
 test('register rejects duplicate emails', async () => {
@@ -99,4 +119,17 @@ test('login rejects unknown users and invalid passwords', async () => {
     () => wrongPasswordAuth.login('student@example.com', 'WrongPass123!'),
     /Invalid email or password/
   );
+});
+
+test('verifyToken returns null for empty, malformed, and expired tokens', () => {
+  const authService = loadAuthService({
+    async findByEmail() {
+      return null;
+    },
+  });
+  const expiredToken = jwt.sign({ userId: 'user-1' }, TEST_JWT_SECRET, { expiresIn: -1 });
+
+  assert.equal(authService.verifyToken(''), null);
+  assert.equal(authService.verifyToken('not-a-token'), null);
+  assert.equal(authService.verifyToken(expiredToken), null);
 });

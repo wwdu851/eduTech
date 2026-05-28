@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { getAuthToken } from '../utils/auth';
 
-const uri = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
+const uri = import.meta.env?.VITE_GRAPHQL_URL || '/graphql';
 
 const authLink = setContext((_, { headers }) => {
   const token = getAuthToken();

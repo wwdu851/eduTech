@@ -31,10 +31,37 @@ test('sanitizeInput strips HTML tags by default and decodes display entities', (
   assert.equal(sanitized.includes('<script>'), false);
 });
 
+test('sanitizeInput returns non-string values unchanged', () => {
+  assert.equal(safetyService.sanitizeInput(null), null);
+  assert.equal(safetyService.sanitizeInput(undefined), undefined);
+  assert.equal(safetyService.sanitizeInput(42), 42);
+});
+
 test('sanitizeInput can still accept an explicit allow-list when needed', () => {
   const sanitized = safetyService.sanitizeInput('<b>Hello</b> <i>student</i>', {
     allowedTags: ['b'],
   });
 
   assert.equal(sanitized, '<b>Hello</b> student');
+});
+
+test('validateCardInput enforces title, content, and idempotency key boundaries', () => {
+  assert.throws(
+    () => safetyService.validateCardInput({ title: 'Hi', content: '' }),
+    /Too small/
+  );
+
+  assert.throws(
+    () => safetyService.validateCardInput({ title: 'Valid title', content: 'x'.repeat(5001) }),
+    /Too big/
+  );
+
+  assert.throws(
+    () => safetyService.validateCardInput({
+      title: 'Valid title',
+      content: '',
+      idempotencyKey: '1234567',
+    }),
+    /Too small/
+  );
 });
